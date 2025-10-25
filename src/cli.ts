@@ -6,6 +6,7 @@ import { initCommand } from './commands/init';
 import { newCommand } from './commands/new';
 import { validateCommand } from './commands/validate';
 import { checkCommand } from './commands/check';
+import { listCommand } from './commands/list';
 import { CLI_NAME } from './constants';
 
 const program = new Command();
@@ -44,12 +45,20 @@ program
     }
   });
 
-// List command (placeholder)
+// List command
 program
   .command('list')
   .description('List all configured file links')
-  .action(() => {
-    console.log(chalk.yellow('Coming soon: list command'));
+  .option('--local', 'List only link files in current directory (non-recursive)')
+  .option('--config', 'List link files from root configuration')
+  .option('-v, --verbose', 'Show file sizes and link counts')
+  .action(async (options) => {
+    try {
+      await listCommand(options);
+    } catch (error) {
+      console.error(chalk.red('Error:'), error instanceof Error ? error.message : error);
+      process.exit(1);
+    }
   });
 
 // Check command

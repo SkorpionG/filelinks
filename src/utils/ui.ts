@@ -12,7 +12,7 @@ import type { ValidationResult, ValidationIssue } from './validation';
  * Display a command header with consistent styling
  */
 export function displayCommandHeader(commandName: string, cliName: string): void {
-  console.log(chalk.bold.blue(`\n${cliName} ${commandName}\n`));
+  console.log(chalk.bold.blue(`${cliName} ${commandName}\n`));
 }
 
 /**

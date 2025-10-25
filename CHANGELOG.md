@@ -1,8 +1,41 @@
 # Changelog
 
+## [0.2.0] - 2025-10-25
+
+### Added - New Features in `filelinks list` Command
+
+- **`filelinks list` command**: Discover and navigate link files across your project
+  - **Default mode**: Lists all link files recursively from current directory (changed behavior)
+    - Previously listed all files in repository; now starts from current directory
+    - More intuitive behavior: focuses on your current working context
+  - **`--local` flag**: Lists link files only in current directory (non-recursive)
+    - Works from anywhere in the repository
+    - Shows only files in the exact directory you're in
+  - **`--config` flag**: Lists link files from root configuration with IDs and names
+    - Shows all files defined in `filelinks.config.ts`
+    - Displays missing files with yellow `[MISSING]` tag
+  - **`--config --local` combination**: Filter config files to current directory
+    - NEW: Combines `--config` and `--local` to show only config files in current directory and subdirectories
+    - Perfect for working in a specific module or package
+    - Shows "X out of Y in config" to indicate filtering
+  - **`-v, --verbose` flag**: Shows file sizes and link counts for all modes
+    - Displays human-readable file sizes (B, KB, MB, GB, TB, PB)
+    - Counts and displays the number of links in each link file
+    - Format: `(2.25 KB, 3 links)` or `(1.04 KB, 1 link)`
+    - Works with all combinations: default, `--local`, `--config`, and `--config --local`
+  - Colored output for better readability
+  - Directory grouping for organized output
+  - Helpful hints suggesting other list modes
+
+### Changed
+
+- Improved UI consistency across all commands:
+  - Removed extra indentation from command headers
+  - More vibrant and scannable output
+
 ## [0.1.0] - 2025-10-25
 
-### Added
+### Added - Initial Release
 
 - **Two-tier configuration system**: Link files (JSON) + Root configuration (TypeScript)
 - **`filelinks init` command**: Initialize root configuration at git repository root
@@ -77,6 +110,5 @@
 
 ### Coming Soon
 
-- `filelinks list` - List all configured links
 - `filelinks add` - Add new link to existing file
 - `filelinks remove` - Remove link from file

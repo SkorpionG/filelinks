@@ -12,6 +12,7 @@
 - [Commands](#commands)
   - [`filelinks init`](#filelinks-init-options)
   - [`filelinks new`](#filelinks-new-options)
+  - [`filelinks list`](#filelinks-list-options)
   - [`filelinks check`](#filelinks-check-file-options)
   - [`filelinks validate`](#filelinks-validate-file-options)
 - [Configuration](#configuration)
@@ -28,6 +29,7 @@
   - [Setting Up a New Repository](#setting-up-a-new-repository)
   - [Adding Links to a Subdirectory](#adding-links-to-a-subdirectory)
 - [Example Use Cases](#example-use-cases)
+- [Change Log](#change-log)
 
 ## Installation
 
@@ -41,6 +43,34 @@ Or install globally to use across multiple projects:
 
 ```bash
 npm install -g filelinks
+```
+
+### Using Yarn
+
+Install as a dev dependency:
+
+```bash
+yarn add --dev filelinks
+```
+
+Or install globally:
+
+```bash
+yarn global add filelinks
+```
+
+### Using pnpm
+
+Install as a dev dependency:
+
+```bash
+pnpm add -D filelinks
+```
+
+Or install globally:
+
+```bash
+pnpm add -g filelinks
 ```
 
 ## Quick Start
@@ -134,6 +164,129 @@ filelinks new
 # Overwrite existing link file
 filelinks new --force
 ```
+
+### `filelinks list [options]`
+
+List link files in the current directory and subdirectories. Helps you discover and navigate link files across your project.
+
+**Options:**
+
+- `--local` - List only link files in the current directory (non-recursive)
+- `--config` - List link files from root configuration (shows IDs, names, and paths)
+  - Can be combined with `--local` to filter config files to current directory and subdirectories
+- `-v, --verbose` - Show file sizes, link counts, and additional details
+
+**Examples:**
+
+```bash
+# List link files recursively from current directory (default)
+filelinks list
+
+# List only in current directory (non-recursive)
+filelinks list --local
+
+# List from root config with IDs
+filelinks list --config
+
+# List config files that are in current directory and subdirectories
+filelinks list --config --local
+
+# Show file sizes and link counts with verbose mode
+filelinks list --verbose
+filelinks list --local -v
+filelinks list --config --verbose
+filelinks list --config --local --verbose
+```
+
+**Output modes:**
+
+**Default mode** (`filelinks list`):
+Lists all link files recursively from the current directory
+
+```bash
+✓ Found 5 link file(s):
+
+(current directory)/
+  • filelinks.links.json - filelinks.links.json
+
+cli_test/
+  • filelinks.links.json - cli_test/filelinks.links.json
+
+examples/
+  • filelinks.links.json - examples/filelinks.links.json
+
+Total: 5 link file(s)
+
+Run "filelinks list --local" to see only files in current directory (non-recursive)
+Run "filelinks list --config" to see files from filelinks.config.ts
+Run "filelinks list --verbose" to see file sizes and link counts
+```
+
+**Local mode** (`filelinks list --local`):
+Lists only files in current directory (non-recursive)
+
+```bash
+Link files in current directory:
+
+✓ Found 1 link file(s):
+
+  • filelinks.links.json
+
+Run "filelinks list --local --verbose" to see file sizes and link counts
+```
+
+**Verbose mode** (`filelinks list --verbose`):
+Shows file sizes and link counts
+
+```bash
+✓ Found 1 link file(s):
+
+(current directory)/
+  • filelinks.links.json - filelinks.links.json (1.04 KB, 4 links)
+
+Total: 1 link file(s)
+```
+
+**Config mode** (`filelinks list --config`):
+Lists files from root configuration
+
+```bash
+Link files from filelinks.config.ts:
+
+✓ Found 3 link file(s) in config:
+
+  • root - Root Links (./filelinks.links.json)
+  • api - API Module (./packages/api/filelinks.links.json)
+  • web - Web Module (./packages/web/filelinks.links.json)
+
+Run "filelinks list --config --verbose" to see file sizes and link counts
+```
+
+**Config + Local mode** (`filelinks list --config --local`):
+Filters config files to current directory and subdirectories
+
+```bash
+Link files from filelinks.config.ts:
+
+✓ Found 2 link file(s) in current directory (out of 10 in config):
+
+  • api - API Module (./packages/api/filelinks.links.json)
+  • api-v2 - API V2 Module (./packages/api/v2/filelinks.links.json)
+
+Run "filelinks list --config --local --verbose" to see file sizes and link counts
+```
+
+**Features:**
+
+- Colored output for better readability:
+  - **Cyan** for counts and IDs
+  - **Green** for filenames
+  - **Dim** for file paths
+  - **Yellow** for missing files (in `--config` mode)
+- Grouped by directory in default and recursive modes
+- File sizes shown only with `--verbose` flag (formatted: B, KB, MB, GB, TB)
+- Detects missing files in `--config` mode
+- Works from any directory in the repository
 
 ### `filelinks check [file] [options]`
 
@@ -605,9 +758,13 @@ See [examples/README.md](examples/README.md) for real-world configuration exampl
 - Test coverage tracking
 - Multi-package monorepo links
 
+## Change Log
+
+See [CHANGELOG.md](CHANGELOG.md) for a detailed list of changes and updates.
+
 ## License
 
-MIT © [SkorpionG](https://github.com/SkorpionG)
+This software is licensed under the MIT License © by [SkorpionG](https://github.com/SkorpionG)
 
 ## Repository
 

@@ -551,6 +551,125 @@ Link file validation:
   ✓ Glob patterns "src/api/**/*.ts" and "docs/api/**/*.md" will be matched at runtime
 ```
 
+## Discovering Link Files
+
+Use the `filelinks list` command to discover and navigate link files in your project:
+
+```bash
+# List link files recursively from current directory (default)
+filelinks list
+
+# List only in current directory (non-recursive)
+filelinks list --local
+
+# View link files from root config with IDs
+filelinks list --config
+
+# View config files that are in current directory and subdirectories
+filelinks list --config --local
+
+# Show file sizes and link counts (verbose mode)
+filelinks list --verbose
+filelinks list --local --verbose
+filelinks list --config --verbose
+filelinks list --config --local --verbose
+```
+
+### How List Modes Work
+
+**Default mode** (`filelinks list`):
+
+- Lists all link files **recursively from current directory**
+- Searches in subdirectories automatically
+- Groups files by directory for easy navigation
+- Perfect for getting an overview of your current context
+
+**Local mode** (`filelinks list --local`):
+
+- Lists only files in the **current directory** (non-recursive)
+- Does not search subdirectories
+- Quick way to see what's in your exact location
+
+**Config mode** (`filelinks list --config`):
+
+- Lists all link files defined in `filelinks.config.ts`
+- Shows IDs, names, and paths from root configuration
+- Displays missing files with yellow `[MISSING]` tag
+- Works from any directory in the repository
+
+**Config + Local mode** (`filelinks list --config --local`):
+
+- Filters config files to **current directory and subdirectories**
+- Perfect for working in a specific module or package
+- Shows "X out of Y in config" to indicate how many files are filtered
+- Example: When in `packages/api/`, only shows config files for that package
+
+### Verbose Mode
+
+The `--verbose` (or `-v`) flag adds detailed information about each link file:
+
+**What verbose mode shows:**
+
+- **File size**: Human-readable format (B, KB, MB, GB, etc.)
+- **Link count**: Number of links defined in each file
+- **Format**: `(2.25 KB, 3 links)` or `(1.04 KB, 1 link)`
+
+**Example output:**
+
+```bash
+$ filelinks list --local --verbose
+
+Link files in current directory:
+
+✓ Found 2 link file(s):
+
+  • filelinks.links.json (1.5 KB, 4 links)
+  • .filelinksrc.json (512 B, 1 link)
+```
+
+**Example with --config:**
+
+```bash
+$ filelinks list --config --verbose
+
+Link files from filelinks.config.ts:
+
+✓ Found 3 link file(s) in config:
+
+  • root - Root Links (./filelinks.links.json) [1.5 KB, 4 links]
+  • api - API Module (./src/api/filelinks.links.json) [2.1 KB, 6 links]
+  • web - Web Module (./src/web/filelinks.links.json) [890 B, 2 links]
+```
+
+**Example with --config --local from `src/api/` directory:**
+
+```bash
+$ cd src/api
+$ filelinks list --config --local --verbose
+
+Link files from filelinks.config.ts:
+
+✓ Found 2 link file(s) in current directory (out of 5 in config):
+
+  • api - API Module (./src/api/filelinks.links.json) [2.1 KB, 6 links]
+  • api-routes - API Routes (./src/api/routes/filelinks.links.json) [1.3 KB, 3 links]
+```
+
+**Benefits of verbose mode:**
+
+- Quickly see how many links are in each file without opening it
+- Identify large link files that might need refactoring
+- Understand the scope of your link configurations at a glance
+
+The `list` command helps you:
+
+- Find all link files in your current working context
+- See which directories have link configurations
+- Identify link files by their IDs for targeted checking
+- Detect missing or broken link file references
+- Filter config files to specific directories (with `--config --local`)
+- Understand the size and complexity of each link file (with `--verbose`)
+
 ## Getting Started: Usage Examples
 
 ### Option 1: Use This Example
