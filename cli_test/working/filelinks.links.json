@@ -1,0 +1,10 @@
+[
+  {
+    "watch": ["cli_test/working/watch.md"],
+    "target": ["cli_test/working/target.md"],
+    "watchType": "uncommitted",
+    "name": "CLI Test Working",
+    "description": "Test for working changes",
+    "id": "cli-test-working"
+  }
+]

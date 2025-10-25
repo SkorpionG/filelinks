@@ -1,0 +1,75 @@
+[
+  {
+    "watch": ["cli_test/uncommitted-watch.md"],
+    "target": ["cli_test/uncommitted-target.md"],
+    "watchType": "uncommitted",
+    "name": "CLI Test Uncommitted",
+    "description": "Test for uncommitted changes",
+    "id": "cli-test-uncommitted"
+  },
+  {
+    "watch": ["cli_test/staged-watch.md"],
+    "target": ["cli_test/staged-target.md"],
+    "watchType": "staged",
+    "name": "CLI Test Staged",
+    "description": "Test for staged changes",
+    "id": "cli-test-staged"
+  },
+  {
+    "watch": ["cli_test/unstaged-watch.md"],
+    "target": ["cli_test/unstaged-target.md"],
+    "watchType": "unstaged",
+    "name": "CLI Test Unstaged",
+    "description": "Test for unstaged changes",
+    "id": "cli-test-unstaged"
+  },
+  {
+    "watch": ["cli_test/duplicate-watch.md"],
+    "target": ["cli_test/duplicate-target.md"],
+    "watchType": "uncommitted",
+    "name": "CLI Test Duplicate",
+    "description": "Test for duplicate changes",
+    "id": "cli-test-duplicate"
+  },
+  {
+    "watch": ["cli_test/duplicate-watch.md"],
+    "target": ["cli_test/duplicate-target.md"],
+    "watchType": "uncommitted",
+    "name": "CLI Test Duplicate",
+    "description": "Test for duplicate changes",
+    "id": "cli-test-duplicate"
+  },
+  {
+    "watch": ["cli_test/path/to/non/existent-watch.md"],
+    "target": ["cli_test/path/to/non/existent-target.md"],
+    "watchType": "uncommitted",
+    "name": "CLI Test Non Existent",
+    "description": "Test for non-existent changes",
+    "id": "cli-test-non-existent"
+  },
+  {
+    "watch": ["cli_test/uncommitted-watch.md"],
+    "target": ["cli_test/uncommitted-target.md"],
+    "watchType": "committed",
+    "name": "CLI Test Invalid Watch Type",
+    "description": "Test for invalid watch type",
+    "id": "cli-test-invalid-watch-type"
+  },
+  {
+    "watch": ["../watch.txt"],
+    "target": ["../target.txt"],
+    "watchType": "committed",
+    "name": "CLI Test Parent Directory",
+    "description": "Test for parent directory",
+    "id": "cli-test-parent-directory"
+  },
+  {
+    "watch": ["cli_test/uncommitted-target.md"],
+    "target": ["cli_test/uncommitted-target.md"],
+    "watchType": "uncommitted",
+    "name": "CLI Test Same Watch and Target",
+    "description": "Test for same watch and target file",
+    "id": "cli-test-same-watch-and-target"
+  },
+  {}
+]

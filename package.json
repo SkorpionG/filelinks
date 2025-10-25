@@ -1,0 +1,71 @@
+{
+  "name": "filelinks",
+  "version": "0.1.0",
+  "description": "A lightweight CLI tool for declaring implicit links between files in a workspace, notifying when watched files change",
+  "license": "MIT",
+  "author": "SkorpionG",
+  "homepage": "https://github.com/SkorpionG/filelinks#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/SkorpionG/filelinks.git"
+  },
+  "bugs": {
+    "url": "https://github.com/SkorpionG/filelinks/issues"
+  },
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "bin": {
+    "filelinks": "dist/cli.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint . --ext .ts,.js",
+    "lint:fix": "eslint . --ext .ts,.js --fix",
+    "format": "prettier --write \"**/*.{ts,js,json,md}\"",
+    "format:check": "prettier --check \"**/*.{ts,js,json,md}\"",
+    "check": "npm run typecheck && npm run format:check && npm run lint && npm run test",
+    "prepublishOnly": "npm run typecheck && npm run lint && npm run format:check && npm run test && npm run build"
+  },
+  "keywords": [
+    "cli",
+    "file-watcher",
+    "git",
+    "links",
+    "workflow",
+    "development-tools"
+  ],
+  "engines": {
+    "node": ">=16.0.0"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "devDependencies": {
+    "@eslint/js": "9.38.0",
+    "@types/glob": "8.1.0",
+    "@types/inquirer": "9.0.9",
+    "@types/jest": "30.0.0",
+    "@types/node": "24.9.1",
+    "eslint": "9.38.0",
+    "jest": "30.2.0",
+    "prettier": "3.6.2",
+    "ts-jest": "29.4.5",
+    "tsx": "4.20.6",
+    "typescript": "5.9.3",
+    "typescript-eslint": "8.46.2"
+  },
+  "dependencies": {
+    "chalk": "5.6.2",
+    "commander": "14.0.1",
+    "glob": "11.0.3",
+    "inquirer": "12.10.0",
+    "simple-git": "3.28.0"
+  }
+}

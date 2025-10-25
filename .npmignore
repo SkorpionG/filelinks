@@ -1,0 +1,51 @@
+# Source files (users only need the compiled dist folder)
+src/
+tests/
+examples/
+
+# Configuration files
+tsconfig.json
+jest.config.js
+eslint.config.js
+.prettierrc.json
+.prettierrc
+.prettierignore
+
+# Development files
+.vscode/
+.git/
+.gitignore
+.DS_Store
+
+# Documentation (keep README.md, exclude others)
+*.md
+!README.md
+
+# Build artifacts we don't want to publish
+coverage/
+*.log
+*.tgz
+
+# Node modules
+node_modules/
+
+# Environment files
+.env
+.env.*
+
+# Test files
+**/*.test.ts
+**/*.test.js
+**/*.spec.ts
+**/*.spec.js
+
+# Source maps (optional - uncomment to exclude)
+# dist/**/*.map
+
+# TypeScript declaration maps (usually not needed in published packages)
+dist/**/*.d.ts.map
+
+cli_test/
+.specstory/
+filelinks.config.ts
+filelinks.links.json

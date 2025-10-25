@@ -1,0 +1,34 @@
+[
+  {
+    "id": "docs-changelog",
+    "name": "Documentation and Changelog",
+    "description": "Ensure CHANGELOG is updated when documentation changes",
+    "watch": ["docs/**/*.md", "README.md"],
+    "target": ["CHANGELOG.md"],
+    "watchType": "uncommitted"
+  },
+  {
+    "id": "api-docs",
+    "name": "API Documentation",
+    "description": "Keep API docs in sync with implementation",
+    "watch": ["src/api/**/*.ts"],
+    "target": ["docs/api/README.md", "docs/api/endpoints.md"],
+    "watchType": "uncommitted"
+  },
+  {
+    "id": "schema-migration",
+    "name": "Database Schema and Migrations",
+    "description": "Ensure migrations are created when schema changes",
+    "watch": ["src/db/schema.ts"],
+    "target": ["src/db/migrations/*.sql"],
+    "watchType": "staged"
+  },
+  {
+    "id": "package-lockfile",
+    "name": "Package Dependencies",
+    "description": "Remind to update lockfile when package.json changes",
+    "watch": ["package.json"],
+    "target": ["package-lock.json", "yarn.lock", "pnpm-lock.yaml"],
+    "watchType": "unstaged"
+  }
+]
