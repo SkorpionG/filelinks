@@ -29,6 +29,10 @@
   - [Setting Up a New Repository](#setting-up-a-new-repository)
   - [Adding Links to a Subdirectory](#adding-links-to-a-subdirectory)
 - [Example Use Cases](#example-use-cases)
+- [Troubleshooting](#troubleshooting)
+  - [Command Not Found After Installation](#command-not-found-after-installation)
+  - [Installation Location Matters](#installation-location-matters)
+  - [Verifying Installation](#verifying-installation)
 - [Change Log](#change-log)
 
 ## Installation
@@ -757,6 +761,121 @@ See [examples/README.md](examples/README.md) for real-world configuration exampl
 - Configuration file relationships
 - Test coverage tracking
 - Multi-package monorepo links
+
+## Troubleshooting
+
+### Command Not Found After Installation
+
+If you get a "command not found" error when running `filelinks`, this is typically due to how npm installs packages locally vs. globally.
+
+**Problem:** When you install `filelinks` locally (e.g., `npm install --save-dev filelinks`), the executable is placed in `node_modules/.bin/`, which is not in your system's `$PATH`.
+
+**Solutions:**
+
+#### Option 1: Use npx (Recommended)
+
+`npx` runs executables from local `node_modules/.bin/` without needing them in your `$PATH`:
+
+```bash
+npx filelinks init
+npx filelinks check
+npx filelinks validate
+```
+
+**Why this works:** `npx` automatically finds and runs the locally installed version of `filelinks`.
+
+#### Option 2: Use npm scripts
+
+Add `filelinks` commands to your `package.json` scripts. npm automatically adds `node_modules/.bin/` to the PATH when running scripts:
+
+```json
+{
+  "scripts": {
+    "links:check": "filelinks check",
+    "links:validate": "filelinks validate",
+    "links:init": "filelinks init"
+  }
+}
+```
+
+Then run:
+
+```bash
+npm run links:check
+npm run links:validate
+```
+
+**Why this works:** When npm runs a script, it temporarily adds `node_modules/.bin/` to the PATH.
+
+#### Option 3: Install globally
+
+Install `filelinks` globally to make it available system-wide:
+
+```bash
+npm install -g filelinks
+# Now you can use it directly
+filelinks check
+```
+
+**Trade-offs:**
+
+- ✅ Works from any directory without `npx`
+- ❌ Not tied to project version (team members might have different versions)
+- ❌ Requires admin/sudo on some systems
+
+#### Option 4: Add to PATH manually (Advanced)
+
+You can add your project's `node_modules/.bin/` to your PATH, but this is **not recommended** as it's project-specific:
+
+```bash
+# Temporarily for current shell session
+export PATH="./node_modules/.bin:$PATH"
+
+# Now you can run
+filelinks check
+```
+
+**Why this isn't recommended:** This only works in the current directory and requires setting up for each shell session.
+
+### Installation Location Matters
+
+**Important:** For local installations, the command only works when:
+
+1. You're in the directory where `filelinks` is installed, OR
+2. You're in a subdirectory of that location, AND
+3. You use `npx filelinks` or npm scripts
+
+**Example:**
+
+```bash
+# ✅ Works - in the directory where filelinks is installed
+/my-repo$ npm install --save-dev filelinks
+/my-repo$ npx filelinks check
+
+# ✅ Works - in a subdirectory
+/my-repo/src$ npx filelinks check
+
+# ❌ Doesn't work - parent directory doesn't have filelinks
+/parent-dir$ npm install --save-dev filelinks
+/parent-dir/my-repo$ filelinks check  # Command not found!
+```
+
+**Best practice:** Install `filelinks` at your repository root as a dev dependency, then use `npx` or npm scripts to run it from anywhere in your project.
+
+### Verifying Installation
+
+Check if `filelinks` is installed correctly:
+
+```bash
+# Check if installed locally
+npx filelinks --version
+
+# Check if installed globally
+filelinks --version
+
+# Check where it's installed
+npm list filelinks
+```
 
 ## Change Log
 

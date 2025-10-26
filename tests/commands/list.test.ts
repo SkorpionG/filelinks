@@ -1,6 +1,6 @@
 import * as fs from 'fs';
 import * as path from 'path';
-import { LINK_FILE_NAMES } from '../src/constants';
+import { LINK_FILE_NAMES } from '../../src/constants';
 
 // Mock chalk to avoid ESM import issues in Jest
 jest.mock('chalk', () => ({
@@ -12,7 +12,7 @@ jest.mock('chalk', () => ({
 }));
 
 // Mock the UI module to avoid chalk import issues in Jest
-jest.mock('../src/utils/ui', () => ({
+jest.mock('../../src/utils/ui', () => ({
   displayCommandHeader: jest.fn(),
   displayWarning: jest.fn(),
   displaySuccess: jest.fn(),
@@ -29,7 +29,7 @@ import {
   findLinkFilesRecursive,
   groupLinkFilesByDirectory,
   countLinksInFile,
-} from '../src/commands/list';
+} from '../../src/commands/list';
 
 describe('List Command Functions', () => {
   let testDir: string;
