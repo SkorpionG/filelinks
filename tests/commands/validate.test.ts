@@ -86,6 +86,7 @@ describe('Validate Command', () => {
       code?: string | number | null | undefined
     ) => {
       throw new Error(`process.exit called with ${code}`);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
     }) as any);
 
     // Mock git utilities

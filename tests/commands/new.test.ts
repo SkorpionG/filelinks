@@ -10,6 +10,7 @@ jest.mock('inquirer', () => {
   return {
     __esModule: true,
     default: {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       prompt: (...args: any[]) => mockPrompt(...args),
     },
   };
