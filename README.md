@@ -427,12 +427,15 @@ filelinks validate ./filelinks.links.json
 **Link files:**
 
 - Valid JSON structure (array of FileLinkConfig)
-- Required fields (watch, target) are present and non-empty
+- Required fields (watch, target) are present and non-empty (unless extends is set)
 - Valid watchType values (uncommitted, unstaged, staged)
 - No duplicate IDs within links
 - Watch files exist and are files (not directories)
 - Target files exist and are files (not directories)
 - Paths don't point outside repository (security check)
+- Extended files exist and have valid link file names
+- No circular references in extends chains
+- Warnings shown when properties are ignored due to extends
 
 **Examples:**
 
@@ -581,9 +584,54 @@ filelinks check --id src-api  # Only check API links
 - **id** (optional): Unique identifier for the link
 - **name** (optional): Human-readable name
 - **description** (optional): What this link ensures
-- **watch** (required): Array of file patterns to watch for changes
-- **target** (required): Array of files that should be updated when watch files change
+- **watch** (required unless `extends` is set): Array of file patterns to watch for changes
+- **target** (required unless `extends` is set): Array of files that should be updated when watch files change
 - **watchType** (optional): Type of changes to detect (default: `uncommitted`)
+- **extends** (optional): Path to another link file to include all its links
+
+### Extending Link Configurations
+
+The `extends` property allows you to reuse link configurations from other link files. This is useful for:
+
+- Sharing common link configurations across multiple directories
+- Creating a centralized set of links that can be reused
+- Organizing complex link structures
+
+**Example:**
+
+```json
+[
+  {
+    "id": "shared-docs",
+    "name": "Shared Documentation Links",
+    "description": "Includes all documentation links from shared config",
+    "extends": "shared/filelinks.links.json"
+  }
+]
+```
+
+**How extends works:**
+
+- When you use `extends`, ALL links from the referenced file are included
+- You can use `name` and `description` with `extends` to label what the extended configuration represents
+- Other properties (`watch`, `target`, `watchType`) are ignored when `extends` is set
+- If you provide these ignored properties, a warning will be shown during validation
+- Circular references (file extending itself) are automatically detected and prevented
+- Extended files must have valid link file names (`filelinks.links.json`, `.filelinksrc.json`, or `.filelinksrc`)
+
+**Example with ignored properties warning:**
+
+```json
+[
+  {
+    "id": "api-links",
+    "name": "API Links",
+    "extends": "shared/api.links.json",
+    "watch": ["src/**/*.ts"], // ⚠️ Warning: ignored because extends is set
+    "target": ["docs/API.md"] // ⚠️ Warning: ignored because extends is set
+  }
+]
+```
 
 ### Watch Types
 

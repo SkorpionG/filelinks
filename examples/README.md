@@ -449,6 +449,110 @@ filelinks check --id pre-commit
 # Triggers: "pre-commit" link if schema has staged changes
 ```
 
+### Extending Link Configurations
+
+The `extends` property allows you to reuse link configurations from other link files. This is useful for sharing common links across multiple directories or organizing complex configurations.
+
+**Example: Shared documentation links**
+
+Create a shared configuration file at `shared/docs.links.json`:
+
+```json
+[
+  {
+    "id": "shared-readme-changelog",
+    "name": "README and Changelog",
+    "description": "Ensure CHANGELOG is updated when README changes",
+    "watch": ["README.md"],
+    "target": ["CHANGELOG.md"],
+    "watchType": "uncommitted"
+  },
+  {
+    "id": "shared-api-docs",
+    "name": "API Documentation",
+    "description": "Keep API docs in sync with implementation",
+    "watch": ["src/api/**/*.ts"],
+    "target": ["docs/api/**/*.md"],
+    "watchType": "uncommitted"
+  }
+]
+```
+
+Then in other directories, extend from this shared configuration:
+
+**packages/api/filelinks.links.json:**
+
+```json
+[
+  {
+    "id": "api-shared-links",
+    "name": "API Shared Documentation",
+    "description": "Includes all shared documentation links",
+    "extends": "shared/docs.links.json"
+  },
+  {
+    "id": "api-specific",
+    "name": "API Specific Links",
+    "description": "API-specific validation",
+    "watch": ["packages/api/src/**/*.ts"],
+    "target": ["packages/api/tests/**/*.test.ts"],
+    "watchType": "uncommitted"
+  }
+]
+```
+
+**How it works:**
+
+- The `extends` property includes **ALL links** from the referenced file
+- You can use `name` and `description` to label what the extended configuration represents
+- Other properties (`watch`, `target`, `watchType`) are ignored when `extends` is set
+- Warnings are shown if you provide ignored properties
+- Circular references (file extending itself) are automatically detected
+
+**When to use extends:**
+
+- Share common link configurations across multiple modules
+- Centralize frequently-used link patterns
+- Reduce duplication in monorepo setups
+- Organize complex link structures by separating concerns
+
+**Example with warnings:**
+
+```json
+[
+  {
+    "id": "extended-config",
+    "name": "Extended Configuration",
+    "extends": "shared/docs.links.json",
+    "watch": ["src/**/*.ts"], // ⚠️ Warning: ignored because extends is set
+    "target": ["docs/**/*.md"] // ⚠️ Warning: ignored because extends is set
+  }
+]
+```
+
+During validation, filelinks will warn you that `watch` and `target` are ignored when `extends` is set.
+
+**Validation output:**
+
+```bash
+$ filelinks validate ./packages/api/filelinks.links.json
+
+Link File:
+  /path/to/packages/api/filelinks.links.json
+
+Extends (file-level):
+  • api-shared-links → includes all links from: shared/docs.links.json
+
+Extended files validated:
+  ✓ shared/docs.links.json (2 link(s) included)
+
+✓ Valid (3 link(s): 1 direct + 2 from extends)
+
+⚠ Warnings:
+
+  • "extends" is set but the following properties are also provided and will be ignored: watch, target
+```
+
 ## Configuration Reference
 
 ### Link Configuration Fields

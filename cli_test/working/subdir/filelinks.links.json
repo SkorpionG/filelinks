@@ -1,0 +1,18 @@
+[
+  {
+    "id": "working-subdir",
+    "name": "Working Subdir Links",
+    "description": "Links for subdir in working cli_test",
+    "watch": ["cli_test/working/subdir/watch.md"],
+    "target": ["cli_test/working/subdir/target.md"],
+    "watchType": "uncommitted"
+  },
+  {
+    "id": "working-subdir-2",
+    "name": "Another Subdir Link",
+    "description": "Second link to demonstrate file-level extends",
+    "watch": ["cli_test/working/subdir/*.md"],
+    "target": ["README.md"],
+    "watchType": "uncommitted"
+  }
+]

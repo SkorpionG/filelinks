@@ -205,9 +205,15 @@ export function displayBlankLine(): void {
  */
 export function displayLinkFileValidationErrors(
   linkFileName: string,
-  errors: ValidationIssue[]
+  errors: ValidationIssue[],
+  linkFilePath?: string
 ): void {
-  console.log(chalk.yellow(`\n⚠ Link file "${linkFileName}" has validation errors:`));
+  if (linkFilePath) {
+    console.log(chalk.yellow(`\n⚠ Link file "${linkFileName}" has validation errors:`));
+    console.log(chalk.dim(`  ${linkFilePath}`));
+  } else {
+    console.log(chalk.yellow(`\n⚠ Link file "${linkFileName}" has validation errors:`));
+  }
   errors.forEach((err) => {
     const contextStr = err.context ? ` (${err.context})` : '';
     console.log(chalk.yellow(`  • ${err.message}${contextStr}`));
@@ -220,9 +226,15 @@ export function displayLinkFileValidationErrors(
  */
 export function displayLinkFileValidationWarnings(
   linkFileName: string,
-  warnings: ValidationIssue[]
+  warnings: ValidationIssue[],
+  linkFilePath?: string
 ): void {
-  console.log(chalk.yellow(`\n⚠ Link file "${linkFileName}" has warnings:`));
+  if (linkFilePath) {
+    console.log(chalk.yellow(`\n⚠ Link file "${linkFileName}" has warnings:`));
+    console.log(chalk.dim(`  ${linkFilePath}`));
+  } else {
+    console.log(chalk.yellow(`\n⚠ Link file "${linkFileName}" has warnings:`));
+  }
   warnings.forEach((warning) => {
     const contextStr = warning.context ? ` (${warning.context})` : '';
     console.log(chalk.yellow(`  • ${warning.message}${contextStr}`));

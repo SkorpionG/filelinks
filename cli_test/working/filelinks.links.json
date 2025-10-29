@@ -6,5 +6,11 @@
     "name": "CLI Test Working",
     "description": "Test for working changes",
     "id": "cli-test-working"
+  },
+  {
+    "id": "cli-test-working-subdir",
+    "name": "Working Subdir Extended Links",
+    "description": "This extends from subdir and uses name/description for display",
+    "extends": "cli_test/working/subdir/filelinks.links.json"
   }
 ]

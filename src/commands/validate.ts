@@ -19,6 +19,7 @@ import {
   displayIssues,
   displayBlankLine,
 } from '../utils/ui';
+import { resolveFileExtends } from '../utils/extendsResolver';
 import * as path from 'path';
 import * as fs from 'fs';
 
@@ -130,7 +131,97 @@ async function validateSpecificFile(filePath: string): Promise<void> {
 
   try {
     const links = configManager.loadConfig(absolutePath);
-    const validation = validateLinksConfig(links, baseDir);
+
+    // First validate the original links (to catch warnings about ignored properties with extends)
+    const originalValidation = validateLinksConfig(links, baseDir);
+
+    // Show extends information and resolve
+    const hasExtends = links.some((link) => link.extends);
+    const extendedFileResults: Array<{ path: string; linkCount: number; linkId: string }> = [];
+    let hasExtendsErrors = false;
+
+    if (hasExtends) {
+      displayBlankLine();
+      displayDim('Extends (file-level):');
+      links.forEach((link, index) => {
+        if (link.extends) {
+          const linkId = link.id || link.name || `links[${index}]`;
+          displayDim(`  • ${linkId} → includes all links from: ${link.extends}`);
+        }
+      });
+    }
+
+    // Create initial visited set with the current file to detect self-reference
+    const initialVisitedPaths = new Set<string>([path.normalize(absolutePath)]);
+
+    // Resolve extends for each link - use flatMap to expand file-level extends
+    const resolvedLinks = links.flatMap((link) => {
+      if (!link.extends) {
+        return [link];
+      }
+
+      // Use file-level extends resolution to get ALL links from the extended file
+      const resolution = resolveFileExtends(link.extends, baseDir, initialVisitedPaths);
+
+      // Collect errors
+      if (resolution.errors.length > 0) {
+        hasExtendsErrors = true;
+        displayBlankLine();
+        displayError('Extends resolution errors:\n');
+        resolution.errors.forEach((error) => {
+          displayDim(`  • ${error}`);
+        });
+        return [];
+      }
+
+      // Show circular reference warning
+      if (resolution.hasCircularReference) {
+        hasExtendsErrors = true;
+        displayBlankLine();
+        displayWarning('Circular reference detected in extends chain\n');
+        return [];
+      }
+
+      // Track successful extends resolution
+      if (resolution.links.length > 0) {
+        const linkId = link.id || link.name || 'unknown';
+        extendedFileResults.push({
+          path: link.extends,
+          linkCount: resolution.links.length,
+          linkId,
+        });
+      }
+
+      // Return all links from the extended file(s)
+      return resolution.links;
+    });
+
+    // Show success messages for extended files
+    if (extendedFileResults.length > 0) {
+      displayBlankLine();
+      displayDim('Extended files validated:');
+      extendedFileResults.forEach(({ path: extendsPath, linkCount }) => {
+        displaySuccess(`  ✓ ${extendsPath} (${linkCount} link(s) included)`);
+      });
+    }
+
+    // Validate the resolved links
+    const validation = validateLinksConfig(resolvedLinks, baseDir);
+
+    // Merge warnings from original validation (for extends-related warnings)
+    originalValidation.warnings.forEach((warning) => {
+      // Only add warnings about extends if they're not already in the validation
+      if (warning.message.includes('extends')) {
+        validation.warnings.push(warning);
+      }
+    });
+
+    // If there were extends errors, exit with error
+    if (hasExtendsErrors) {
+      displayBlankLine();
+      displayError('Validation failed due to extends resolution errors\n');
+      process.exit(1);
+    }
 
     if (validation.errors.length > 0) {
       displayError('Link file has errors:\n');
@@ -138,7 +229,17 @@ async function validateSpecificFile(filePath: string): Promise<void> {
       displayBlankLine();
       process.exit(1);
     } else {
-      displaySuccess(`Valid (${links.length} link(s))`);
+      const totalLinks = resolvedLinks.length;
+      const originalCount = links.filter((l) => !l.extends).length;
+      const extendedCount = totalLinks - originalCount;
+
+      if (extendedCount > 0) {
+        displaySuccess(
+          `Valid (${totalLinks} link(s): ${originalCount} direct + ${extendedCount} from extends)`
+        );
+      } else {
+        displaySuccess(`Valid (${totalLinks} link(s))`);
+      }
     }
 
     if (validation.warnings.length > 0) {

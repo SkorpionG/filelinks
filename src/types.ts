@@ -10,18 +10,23 @@ export type WatchType = 'uncommitted' | 'unstaged' | 'staged';
 /**
  * A single file link configuration
  * Defines which files to watch and which targets should be updated
+ *
+ * Note: When 'extends' is set, 'watch' and 'target' are optional (they will be loaded from the extended file).
+ * When 'extends' is not set, 'watch' and 'target' are required.
  */
 export interface FileLinkConfig {
   /** Unique identifier for this link */
   id?: string;
-  /** Human-readable name */
+  /** Human-readable name (can be used with extends for display purposes) */
   name?: string;
-  /** Description of what this link ensures */
+  /** Description of what this link ensures (can be used with extends for display purposes) */
   description?: string;
-  /** File patterns to watch for changes */
-  watch: string[];
-  /** Files that should be updated when watch files change */
-  target: string[];
+  /** Path to another link file to extend from */
+  extends?: string;
+  /** File patterns to watch for changes (required unless extends is set) */
+  watch?: string[];
+  /** Files that should be updated when watch files change (required unless extends is set) */
+  target?: string[];
   /** Type of git changes to detect */
   watchType?: WatchType;
 }

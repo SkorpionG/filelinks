@@ -496,6 +496,148 @@ describe('Validation', () => {
         );
       });
     });
+
+    describe('Extends Property Validation', () => {
+      it('should reject link with non-string extends', () => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const config: FileLinkConfigArray = [{ extends: 123 as any, watch: [], target: [] }];
+
+        const result = validateLinksConfig(config, tempDir);
+        expect(result.valid).toBe(false);
+        expect(result.errors.some((e) => e.message.includes('"extends" must be a string'))).toBe(
+          true
+        );
+      });
+
+      it('should reject link with empty string extends', () => {
+        const config: FileLinkConfigArray = [{ extends: '  ', watch: [], target: [] }];
+
+        const result = validateLinksConfig(config, tempDir);
+        expect(result.valid).toBe(false);
+        expect(result.errors.some((e) => e.message.includes('cannot be an empty string'))).toBe(
+          true
+        );
+      });
+
+      it('should reject link with extends pointing to non-existent file', () => {
+        const config: FileLinkConfigArray = [
+          { extends: './nonexistent.links.json', watch: [], target: [] },
+        ];
+
+        const result = validateLinksConfig(config, tempDir);
+        expect(result.valid).toBe(false);
+        expect(result.errors.some((e) => e.message.includes('does not exist'))).toBe(true);
+      });
+
+      it('should reject link with extends pointing to directory', () => {
+        const testDir = path.join(tempDir, 'testdir');
+        fs.mkdirSync(testDir);
+
+        const config: FileLinkConfigArray = [
+          { extends: path.relative(tempDir, testDir), watch: [], target: [] },
+        ];
+
+        const result = validateLinksConfig(config, tempDir);
+        expect(result.valid).toBe(false);
+        expect(result.errors.some((e) => e.message.includes('not a file'))).toBe(true);
+      });
+
+      it('should accept valid extends property', () => {
+        const extendsFile = path.join(tempDir, 'base.links.json');
+        fs.writeFileSync(extendsFile, '[]');
+
+        const config: FileLinkConfigArray = [
+          { extends: path.relative(tempDir, extendsFile), watch: [], target: [] },
+        ];
+
+        const result = validateLinksConfig(config, tempDir);
+        // Should not have extends-related errors
+        expect(
+          result.errors.some((e) => e.message.includes('"extends"') && e.type === 'error')
+        ).toBe(false);
+      });
+
+      it('should warn when extends is set with watch, target, or watchType', () => {
+        const extendsFile = path.join(tempDir, 'base.links.json');
+        fs.writeFileSync(extendsFile, '[]');
+
+        // Create watch and target files to avoid additional warnings
+        const watchFile = path.join(tempDir, 'file.md');
+        const targetFile = path.join(tempDir, 'target.md');
+        fs.writeFileSync(watchFile, '');
+        fs.writeFileSync(targetFile, '');
+
+        const config: FileLinkConfigArray = [
+          {
+            id: 'test-extends',
+            name: 'This is allowed for display',
+            description: 'This is also allowed for display',
+            extends: path.relative(tempDir, extendsFile),
+            watch: [path.relative(tempDir, watchFile)],
+            target: [path.relative(tempDir, targetFile)],
+            watchType: 'staged',
+          },
+        ];
+
+        const result = validateLinksConfig(config, tempDir);
+        expect(result.warnings).toHaveLength(1);
+        expect(result.warnings[0].message).toContain(
+          'extends" is set but the following properties are also provided and will be ignored'
+        );
+        // The message should say "only id, name, description, and extends are used"
+        expect(result.warnings[0].message).toContain(
+          'only "id", "name", "description", and "extends" are used'
+        );
+        // watch, target, and watchType SHOULD be in the ignored properties list
+        expect(result.warnings[0].message).toContain('watch, target, watchType');
+      });
+
+      it('should allow name and description with extends', () => {
+        const extendsFile = path.join(tempDir, 'base.links.json');
+        fs.writeFileSync(extendsFile, '[]');
+
+        const config: FileLinkConfigArray = [
+          {
+            id: 'test-extends',
+            name: 'Display Name',
+            description: 'Display Description',
+            extends: path.relative(tempDir, extendsFile),
+          },
+        ];
+
+        const result = validateLinksConfig(config, tempDir);
+        // Should have no warnings about name and description
+        expect(result.warnings).toHaveLength(0);
+        expect(result.valid).toBe(true);
+      });
+
+      it('should allow extends without watch and target', () => {
+        const extendsFile = path.join(tempDir, 'base.links.json');
+        fs.writeFileSync(extendsFile, '[]');
+
+        const config: FileLinkConfigArray = [
+          { extends: path.relative(tempDir, extendsFile), watch: [], target: [] },
+        ];
+
+        const result = validateLinksConfig(config, tempDir);
+        // Should not require watch and target when extends is set
+        expect(
+          result.errors.some((e) => e.message.includes('"watch" array') && e.type === 'error')
+        ).toBe(false);
+        expect(
+          result.errors.some((e) => e.message.includes('"target" array') && e.type === 'error')
+        ).toBe(false);
+      });
+
+      it('should require watch and target when extends is not set', () => {
+        const config: FileLinkConfigArray = [{ watch: [], target: [] }];
+
+        const result = validateLinksConfig(config, tempDir);
+        expect(result.valid).toBe(false);
+        expect(result.errors.some((e) => e.message.includes('"watch" array'))).toBe(true);
+        expect(result.errors.some((e) => e.message.includes('"target" array'))).toBe(true);
+      });
+    });
   });
 
   describe('combineValidationResults', () => {

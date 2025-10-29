@@ -263,33 +263,93 @@ export function validateLinksConfig(links: FileLinkConfigArray, baseDir: string)
   links.forEach((link, index) => {
     const context = `links[${index}]`;
 
-    // Validate required properties
-    if (!link.watch || !Array.isArray(link.watch)) {
-      errors.push({
-        type: 'error',
-        message: 'Each link must have a "watch" array property',
-        context,
-      });
-    } else if (link.watch.length === 0) {
-      errors.push({
-        type: 'error',
-        message: '"watch" array cannot be empty',
-        context,
-      });
+    // Validate extends property if present
+    if (link.extends !== undefined) {
+      if (typeof link.extends !== 'string') {
+        errors.push({
+          type: 'error',
+          message: '"extends" must be a string',
+          context,
+        });
+      } else if (link.extends.trim() === '') {
+        errors.push({
+          type: 'error',
+          message: '"extends" cannot be an empty string',
+          context,
+        });
+      } else {
+        // Check if extends path is valid
+        const extendsPath = path.resolve(baseDir, link.extends);
+        if (!fs.existsSync(extendsPath)) {
+          errors.push({
+            type: 'error',
+            message: `Extends file does not exist: "${link.extends}"`,
+            context,
+          });
+        } else if (!fs.statSync(extendsPath).isFile()) {
+          errors.push({
+            type: 'error',
+            message: `Extends path is not a file: "${link.extends}"`,
+            context,
+          });
+        }
+      }
+
+      // Warn if extends is set with properties that will be ignored
+      // Note: name and description are allowed with extends for display purposes
+      const ignoredProperties: string[] = [];
+
+      // Check for properties that will be ignored (watch, target, watchType)
+      if (link.watch && Array.isArray(link.watch) && link.watch.length > 0)
+        ignoredProperties.push('watch');
+      if (link.target && Array.isArray(link.target) && link.target.length > 0)
+        ignoredProperties.push('target');
+      if (link.watchType !== undefined) ignoredProperties.push('watchType');
+
+      if (ignoredProperties.length > 0) {
+        warnings.push({
+          type: 'warning',
+          message: `"extends" is set but the following properties are also provided and will be ignored: ${ignoredProperties.join(', ')}. When using "extends", only "id", "name", "description", and "extends" are used.`,
+          context,
+        });
+      }
     }
 
-    if (!link.target || !Array.isArray(link.target)) {
-      errors.push({
-        type: 'error',
-        message: 'Each link must have a "target" array property',
-        context,
-      });
-    } else if (link.target.length === 0) {
-      errors.push({
-        type: 'error',
-        message: '"target" array cannot be empty',
-        context,
-      });
+    // Validate required properties (watch and target are required if extends is not set)
+    const hasExtends =
+      link.extends !== undefined &&
+      link.extends !== null &&
+      typeof link.extends === 'string' &&
+      link.extends.trim() !== '';
+
+    if (!hasExtends) {
+      if (!link.watch || !Array.isArray(link.watch)) {
+        errors.push({
+          type: 'error',
+          message: 'Each link must have a "watch" array property (unless "extends" is set)',
+          context,
+        });
+      } else if (link.watch.length === 0) {
+        errors.push({
+          type: 'error',
+          message: '"watch" array cannot be empty (unless "extends" is set)',
+          context,
+        });
+      }
+
+      if (!link.target || !Array.isArray(link.target)) {
+        errors.push({
+          type: 'error',
+          message: 'Each link must have a "target" array property (unless "extends" is set)',
+          context,
+        });
+      } else if (link.target.length === 0) {
+        errors.push({
+          type: 'error',
+          message: '"target" array cannot be empty (unless "extends" is set)',
+          context,
+        });
+      }
     }
 
     // Validate watchType if specified

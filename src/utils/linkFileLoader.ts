@@ -17,6 +17,7 @@ import {
   displayWarning,
 } from './ui';
 import type { FileLinkConfigArray, PartialLinkFileReference } from '../types';
+import { resolveFileExtends } from './extendsResolver';
 
 /**
  * Represents a loaded link file with its metadata
@@ -270,21 +271,76 @@ async function processLinkFile(
   try {
     const links = configManager.loadConfig(linkFilePath);
 
+    // First validate the original links to catch warnings about ignored properties with extends
+    const originalValidation = validateLinksConfig(links, gitRoot);
+
+    // Create initial visited set with the current file to detect self-reference
+    const initialVisitedPaths = new Set<string>([path.normalize(absolutePath)]);
+
+    // Resolve extends for each link - use flatMap to expand file-level extends
+    const resolvedLinks = links.flatMap((link) => {
+      if (!link.extends) {
+        return [link];
+      }
+
+      // Use file-level extends resolution to get ALL links from the extended file
+      const resolution = resolveFileExtends(link.extends, gitRoot, initialVisitedPaths);
+
+      // Show errors if any
+      if (resolution.errors.length > 0) {
+        resolution.errors.forEach((error) => {
+          displayError(`Error resolving extends for link in "${linkFileRef.path}":`);
+          displayDim(`  ${error}`);
+        });
+        // Return empty array if resolution failed
+        return [];
+      }
+
+      // Show warnings if any
+      if (options.showWarnings && resolution.warnings.length > 0) {
+        resolution.warnings.forEach((warning) => {
+          displayWarning(`Warning resolving extends in "${linkFileRef.path}":`);
+          displayDim(`  ${warning}`);
+        });
+      }
+
+      // Show circular reference warning
+      if (resolution.hasCircularReference) {
+        displayWarning(`Circular reference in "${linkFileRef.path}":`);
+        displayDim(`  Circular reference detected in extends chain. Skipping this link.`);
+        return [];
+      }
+
+      // Return all links from the extended file(s)
+      return resolution.links;
+    });
+
     // Validate the links config (paths are relative to git root, not link file dir)
-    const linksValidation = validateLinksConfig(links, gitRoot);
+    const linksValidation = validateLinksConfig(resolvedLinks, gitRoot);
+
+    // Merge extends-related warnings from original validation
+    originalValidation.warnings.forEach((warning) => {
+      if (warning.message.includes('extends')) {
+        linksValidation.warnings.push(warning);
+      }
+    });
 
     if (linksValidation.errors.length > 0) {
-      displayLinkFileValidationErrors(linkFileRef.name, linksValidation.errors);
+      displayLinkFileValidationErrors(linkFileRef.name, linksValidation.errors, linkFileRef.path);
     }
 
     if (options.showWarnings && linksValidation.warnings.length > 0) {
-      displayLinkFileValidationWarnings(linkFileRef.name, linksValidation.warnings);
+      displayLinkFileValidationWarnings(
+        linkFileRef.name,
+        linksValidation.warnings,
+        linkFileRef.path
+      );
     }
 
     // Filter out invalid links if requested
-    let validLinks = links;
+    let validLinks = resolvedLinks;
     if (options.filterInvalidLinks) {
-      validLinks = links.filter((link) => {
+      validLinks = resolvedLinks.filter((link) => {
         // Check if this specific link has errors
         const singleLinkValidation = validateLinksConfig([link], gitRoot);
         return singleLinkValidation.valid;
@@ -388,15 +444,58 @@ export async function validateLinkFiles(
 
     try {
       const links = configManager.loadConfig(linkFilePath);
+
+      // First validate the original links to catch warnings about ignored properties with extends
+      const originalValidation = validateLinksConfig(links, gitRoot);
+
+      // Create initial visited set with the current file to detect self-reference
+      const initialVisitedPaths = new Set<string>([path.normalize(absolutePath)]);
+
+      // Resolve extends for each link - use flatMap to expand file-level extends
+      const resolvedLinks = links.flatMap((link) => {
+        if (!link.extends) {
+          return [link];
+        }
+
+        // Use file-level extends resolution to get ALL links from the extended file
+        const resolution = resolveFileExtends(link.extends, gitRoot, initialVisitedPaths);
+
+        // Collect errors
+        if (resolution.errors.length > 0) {
+          hasErrors = true;
+          console.log(chalk.red('  ✗ Extends resolution errors:\n'));
+          resolution.errors.forEach((error) => {
+            console.log(chalk.dim(`    • ${error}`));
+          });
+          return [];
+        }
+
+        // Show circular reference warning
+        if (resolution.hasCircularReference) {
+          console.log(chalk.yellow('  ⚠ Circular reference detected in extends chain\n'));
+          return [];
+        }
+
+        // Return all links from the extended file(s)
+        return resolution.links;
+      });
+
       // Paths are relative to git root, not link file directory
-      const linksValidation = validateLinksConfig(links, gitRoot);
+      const linksValidation = validateLinksConfig(resolvedLinks, gitRoot);
+
+      // Merge extends-related warnings from original validation
+      originalValidation.warnings.forEach((warning) => {
+        if (warning.message.includes('extends')) {
+          linksValidation.warnings.push(warning);
+        }
+      });
 
       if (linksValidation.errors.length > 0) {
         hasErrors = true;
         console.log(chalk.red('  ✗ Link file has errors:\n'));
         printIssues(linksValidation.errors, '    ');
       } else {
-        console.log(chalk.green(`  ✓ Valid (${links.length} link(s))`));
+        console.log(chalk.green(`  ✓ Valid (${resolvedLinks.length} link(s))`));
       }
 
       if (linksValidation.warnings.length > 0) {

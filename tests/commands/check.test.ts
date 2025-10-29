@@ -282,7 +282,7 @@ describe('Check Command', () => {
 
       await checkCommand({ id: 'specific' });
 
-      expect(loadLinkFiles).toHaveBeenCalledWith(testDir, { id: 'specific' });
+      expect(loadLinkFiles).toHaveBeenCalledWith(testDir, { id: 'specific', showWarnings: true });
     });
   });
 

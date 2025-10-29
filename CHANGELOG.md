@@ -1,5 +1,38 @@
 # Changelog
 
+## [0.3.0] - 2025-10-26
+
+### Added - Extends Feature for Link Configuration Reuse
+
+- **`extends` property**: Reuse link configurations from other link files
+  - Reference another link file to include all its links
+  - Syntax: `"extends": "path/to/filelinks.links.json"`
+  - All links from the extended file are included
+  - Circular reference detection prevents infinite loops
+  - File name validation ensures only valid link files can be extended
+
+- **Display properties with extends**: Use `name` and `description` for better organization
+  - `name` and `description` can be used with `extends` for labeling
+  - Helps identify what the extended configuration represents
+  - Other properties (`watch`, `target`, `watchType`) are ignored when `extends` is set
+  - Warnings shown if ignored properties are provided
+
+- **Enhanced validation messaging**: Better feedback during validation
+  - Shows which extended files were validated successfully
+  - Displays link count from each extended file
+  - Clear warnings when properties will be ignored due to `extends`
+  - File path context in all error and warning messages
+
+- **Improved error reporting**: File paths shown for all validation issues
+  - Easy to identify which file has validation issues
+  - Consistent format across `check` and `validate` commands
+
+### Changed
+
+- Link configurations now support optional `watch` and `target` properties (required only when `extends` is not set)
+- Validation messages now display file paths for better context
+- Link counting excludes invalid extends to show accurate totals
+
 ## [0.2.0] - 2025-10-25
 
 ### Added - New Features in `filelinks list` Command

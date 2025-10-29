@@ -90,7 +90,7 @@ export async function checkCommand(options: CheckOptions = {}): Promise<void> {
   }
 
   // Load link configurations
-  const linkFiles = await loadLinkFiles(gitRoot, { id: options.id });
+  const linkFiles = await loadLinkFiles(gitRoot, { id: options.id, showWarnings: true });
 
   if (linkFiles.length === 0) {
     displayWarning('No link files found to check.');
@@ -208,6 +208,10 @@ function deduplicateLinks(links: FileLinkConfigArray): FileLinkConfigArray {
 
   for (const link of links) {
     // Create a unique key based on watch, target, and watchType
+    // Skip links without watch or target (should have been filtered by validation)
+    if (!link.watch || !link.target) {
+      continue;
+    }
     const watchType = link.watchType || 'uncommitted';
     const watchKey = [...link.watch].sort().join('|');
     const targetKey = [...link.target].sort().join('|');
@@ -220,6 +224,27 @@ function deduplicateLinks(links: FileLinkConfigArray): FileLinkConfigArray {
   }
 
   return deduplicated;
+}
+
+/**
+ * Print a message for a link with no changes (verbose mode only)
+ *
+ * @param link - Link configuration
+ * @param linkFilePath - Relative path to the link file from git root
+ */
+function printLinkNoChanges(link: FileLinkConfig, linkFilePath: string): void {
+  const linkName = link.name || link.id || 'Unnamed link';
+
+  displayBlankLine();
+  displaySuccess(linkName);
+  displayDim(`  ${linkFilePath}`);
+
+  if (link.description) {
+    displayDim(`  ${link.description}`);
+  }
+
+  displayDim(`  ✓ No changes detected`);
+  displayBlankLine();
 }
 
 /**
@@ -248,6 +273,8 @@ async function checkLinks(
 
     if (result.hasChanges) {
       await printLinkWarning(link, result.changedWatchFiles, gitRoot, linkFilePath, verbose);
+    } else if (verbose) {
+      printLinkNoChanges(link, linkFilePath);
     }
   }
 
@@ -270,6 +297,11 @@ async function checkSingleLink(
   const watchType = link.watchType || 'uncommitted';
 
   try {
+    // Skip links without watch property (should have been filtered by validation)
+    if (!link.watch) {
+      return { link, hasChanges: false, changedWatchFiles: [] };
+    }
+
     // Get changed files from git
     const changedFiles = await getChangedFiles(watchType, gitRoot);
 
@@ -339,7 +371,7 @@ async function printLinkWarning(
 
   displayBlankLine();
   displayHeader(`  Please review these target files:`);
-  for (const target of link.target) {
+  for (const target of link.target || []) {
     const targetPath = path.join(gitRoot, target);
     const exists = fs.existsSync(targetPath);
     displayStatus(target, exists);
