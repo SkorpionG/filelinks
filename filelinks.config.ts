@@ -103,6 +103,16 @@ const config: RootConfig = {
       name: 'Empty Links Array',
       path: './cli_test/empty_links_array/filelinks.links.json',
     },
+    {
+      id: 'shared-direct',
+      name: 'Shared Link File (Direct)',
+      path: './cli_test/shared-link-file/filelinks.links.json',
+    },
+    {
+      id: 'module-a',
+      name: 'Module A (extends shared)',
+      path: './cli_test/module-a/filelinks.links.json',
+    },
   ],
 };
 

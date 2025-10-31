@@ -1,0 +1,10 @@
+[
+  {
+    "id": "shared-link",
+    "name": "Shared Link",
+    "description": "This link is shared across multiple files",
+    "watch": ["cli_test/shared-link-file/watch.md"],
+    "target": ["cli_test/shared-link-file/target.md"],
+    "watchType": "uncommitted"
+  }
+]

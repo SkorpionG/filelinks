@@ -277,11 +277,43 @@ async function processLinkFile(
     // Create initial visited set with the current file to detect self-reference
     const initialVisitedPaths = new Set<string>([path.normalize(absolutePath)]);
 
+    // Track extends paths to detect duplicates within this link file
+    const seenExtendsPaths = new Map<string, number>(); // Map normalized path to link index
+
     // Resolve extends for each link - use flatMap to expand file-level extends
-    const resolvedLinks = links.flatMap((link) => {
+    const resolvedLinks = links.flatMap((link, index) => {
       if (!link.extends) {
         return [link];
       }
+
+      // Check for duplicate extends paths within this file
+      const extendsAbsolutePath = path.resolve(gitRoot, link.extends);
+      const normalizedExtendsPath = path.normalize(extendsAbsolutePath);
+
+      // Check if this file was already loaded from root config
+      if (processedFiles.has(normalizedExtendsPath)) {
+        if (options.showWarnings) {
+          displayWarning(
+            `Link file "${link.extends}" in extends (links[${index}]) was already loaded from root config. Skipping to avoid duplication.`
+          );
+        }
+        return [];
+      }
+
+      // Check for duplicate extends paths within this link file
+      if (seenExtendsPaths.has(normalizedExtendsPath)) {
+        const firstIndex = seenExtendsPaths.get(normalizedExtendsPath);
+        if (options.showWarnings) {
+          displayWarning(
+            `Duplicate extends in "${linkFileRef.path}": links[${index}] extends "${link.extends}" which was already extended by links[${firstIndex}]. Skipping duplicate.`
+          );
+        }
+        return [];
+      }
+
+      seenExtendsPaths.set(normalizedExtendsPath, index);
+      // Also add to processedFiles to prevent loading same file from other link files
+      processedFiles.add(normalizedExtendsPath);
 
       // Use file-level extends resolution to get ALL links from the extended file
       const resolution = resolveFileExtends(link.extends, gitRoot, initialVisitedPaths);
@@ -451,11 +483,43 @@ export async function validateLinkFiles(
       // Create initial visited set with the current file to detect self-reference
       const initialVisitedPaths = new Set<string>([path.normalize(absolutePath)]);
 
+      // Track extends paths to detect duplicates within this link file
+      const seenExtendsPaths = new Map<string, number>(); // Map normalized path to link index
+
       // Resolve extends for each link - use flatMap to expand file-level extends
-      const resolvedLinks = links.flatMap((link) => {
+      const resolvedLinks = links.flatMap((link, index) => {
         if (!link.extends) {
           return [link];
         }
+
+        // Check for duplicate extends paths
+        const extendsAbsolutePath = path.resolve(gitRoot, link.extends);
+        const normalizedExtendsPath = path.normalize(extendsAbsolutePath);
+
+        // Check if this file was already loaded from root config
+        if (processedFiles.has(normalizedExtendsPath)) {
+          console.log(
+            chalk.yellow(
+              `  ⚠ Link file "${link.extends}" in extends (links[${index}]) was already loaded from root config. Skipping to avoid duplication.\n`
+            )
+          );
+          return [];
+        }
+
+        // Check for duplicate extends paths within this link file
+        if (seenExtendsPaths.has(normalizedExtendsPath)) {
+          const firstIndex = seenExtendsPaths.get(normalizedExtendsPath);
+          console.log(
+            chalk.yellow(
+              `  ⚠ Duplicate extends: links[${index}] extends "${link.extends}" which was already extended by links[${firstIndex}]. Skipping duplicate.\n`
+            )
+          );
+          return [];
+        }
+
+        seenExtendsPaths.set(normalizedExtendsPath, index);
+        // Also add to processedFiles to prevent loading same file from other link files
+        processedFiles.add(normalizedExtendsPath);
 
         // Use file-level extends resolution to get ALL links from the extended file
         const resolution = resolveFileExtends(link.extends, gitRoot, initialVisitedPaths);

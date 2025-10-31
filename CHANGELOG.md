@@ -1,5 +1,34 @@
 # Changelog
 
+## [0.3.1] - 2025-10-30
+
+### Fixed
+
+- **Duplicate link file loading**: Fixed issue where the same link file was loaded and processed twice when it appeared both in the root config AND in an "extends" property
+  - Files loaded via extends are now tracked in the same deduplication system as root config files
+  - Prevents wasteful duplicate I/O operations
+  - Shows clear warning: "Link file X in extends was already loaded from root config. Skipping to avoid duplication."
+  - Applies to both `check` and `validate` commands
+
+- **Duplicate extends validation messages**: Fixed confusing error messages when multiple links had the same "extends" property
+  - Previously showed "duplicate id, watch, target" errors after extends resolution
+  - Now detects duplicate extends paths before resolution
+  - Shows clear message: "Duplicate extends: links[N] extends 'path' which was already extended by links[M]. Skipping duplicate."
+  - Prevents loading the same extended file multiple times within a single link file
+
+- **Pattern matching with special characters**: Fixed bug where files in directories with parentheses or brackets weren't detected
+  - Affects Next.js projects with route groups like `(dashboard)` and dynamic routes like `[id]`
+  - Added proper escaping of regex special characters: `( ) [ ] { } + ^ $ | \`
+  - Pattern matching now works correctly with all special characters in file paths
+  - Added comprehensive test coverage for special characters in paths
+
+### Changed
+
+- **Init command messaging**: Improved clarity of messages when no link files exist
+  - Changed "Scanning for link files" to "Searching for existing link files"
+  - Changed warning to informative message: "No existing link files found - creating empty configuration"
+  - Removed suggestion to use `filelinks new` when init is creating root config
+
 ## [0.3.0] - 2025-10-26
 
 ### Added - Extends Feature for Link Configuration Reuse

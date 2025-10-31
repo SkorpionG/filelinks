@@ -1,0 +1,8 @@
+[
+  {
+    "id": "module-a-extends-shared",
+    "name": "Module A Extends Shared",
+    "description": "Module A extends the shared file",
+    "extends": "cli_test/shared-link-file/filelinks.links.json"
+  }
+]

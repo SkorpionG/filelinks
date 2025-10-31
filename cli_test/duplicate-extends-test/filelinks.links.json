@@ -1,0 +1,14 @@
+[
+  {
+    "id": "first-extend",
+    "name": "First Extend",
+    "description": "First reference to shared file",
+    "extends": "cli_test/shared-link-file/filelinks.links.json"
+  },
+  {
+    "id": "second-extend",
+    "name": "Second Extend",
+    "description": "Duplicate reference to same shared file",
+    "extends": "cli_test/shared-link-file/filelinks.links.json"
+  }
+]

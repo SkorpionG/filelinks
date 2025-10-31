@@ -69,7 +69,11 @@ export function matchesPattern(filePath: string, pattern: string): boolean {
 
   // Convert glob pattern to regex
   const regexPattern = normalizedPattern
-    .replace(/\./g, '\\.') // Escape dots
+    // First, escape all special regex characters (except glob wildcards * and ?)
+    .replace(/[\\^$.|+(){}]/g, '\\$&') // Escape most special chars
+    .replace(/\[/g, '\\[') // Escape opening bracket
+    .replace(/\]/g, '\\]') // Escape closing bracket
+    // Then, convert glob patterns to regex
     .replace(/\*\*/g, '§§§') // Temporarily replace **
     .replace(/\*/g, '[^/]*') // * matches anything except /
     .replace(/§§§/g, '.*') // ** matches anything including /

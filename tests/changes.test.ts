@@ -116,6 +116,50 @@ describe('Pattern Matching Utilities', () => {
         expect(matchesPattern('file.ts', 'file.ts')).toBe(true); // dot should be escaped
         expect(matchesPattern('fileXts', 'file.ts')).toBe(false); // dot is not wildcard
       });
+
+      it('should handle paths with underscores only', () => {
+        expect(matchesPattern('src/my_file.ts', 'src/my_file.ts')).toBe(true);
+        expect(matchesPattern('src/my_folder/file.ts', 'src/my_folder/file.ts')).toBe(true);
+        expect(matchesPattern('src/my_folder/my_file.ts', 'src/my_folder/*.ts')).toBe(true);
+        expect(matchesPattern('src/my_folder/sub/file.ts', 'src/my_folder/**/*.ts')).toBe(true);
+      });
+
+      it('should handle paths with parentheses only (Next.js route groups)', () => {
+        expect(matchesPattern('app/(dashboard)/page.tsx', 'app/(dashboard)/page.tsx')).toBe(true);
+        expect(matchesPattern('app/(auth)/login/page.tsx', 'app/(auth)/login/page.tsx')).toBe(true);
+        expect(matchesPattern('src/(components)/Button.tsx', 'src/(components)/*.tsx')).toBe(true);
+        expect(matchesPattern('app/(dashboard)/users/page.tsx', 'app/(dashboard)/**/*.tsx')).toBe(
+          true
+        );
+      });
+
+      it('should handle paths with both parentheses and underscores', () => {
+        expect(matchesPattern('app/(auth)/sign_up/page.tsx', 'app/(auth)/sign_up/page.tsx')).toBe(
+          true
+        );
+        expect(
+          matchesPattern('src/(components)/my_button.tsx', 'src/(components)/my_button.tsx')
+        ).toBe(true);
+        expect(matchesPattern('app/(dashboard)/user_profile.tsx', 'app/(dashboard)/*.tsx')).toBe(
+          true
+        );
+        expect(matchesPattern('src/(utils)/my_helper/index.ts', 'src/(utils)/**/*.ts')).toBe(true);
+      });
+
+      it('should handle paths with square brackets (Next.js dynamic routes)', () => {
+        expect(matchesPattern('app/posts/[id]/page.tsx', 'app/posts/[id]/page.tsx')).toBe(true);
+        expect(matchesPattern('app/posts/[slug]/page.tsx', 'app/posts/[slug]/page.tsx')).toBe(true);
+        expect(matchesPattern('app/users/[id]/edit.tsx', 'app/users/[id]/*.tsx')).toBe(true);
+        expect(matchesPattern('app/posts/[...slug]/page.tsx', 'app/posts/**/*.tsx')).toBe(true);
+      });
+
+      it('should handle paths with other special regex characters', () => {
+        expect(matchesPattern('src/utils/math+helper.ts', 'src/utils/math+helper.ts')).toBe(true);
+        expect(matchesPattern('test/{a,b}.ts', 'test/{a,b}.ts')).toBe(true);
+        expect(matchesPattern('file$name.ts', 'file$name.ts')).toBe(true);
+        expect(matchesPattern('file^name.ts', 'file^name.ts')).toBe(true);
+        expect(matchesPattern('file|name.ts', 'file|name.ts')).toBe(true);
+      });
     });
 
     describe('complex patterns', () => {

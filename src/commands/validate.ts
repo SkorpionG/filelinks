@@ -154,11 +154,29 @@ async function validateSpecificFile(filePath: string): Promise<void> {
     // Create initial visited set with the current file to detect self-reference
     const initialVisitedPaths = new Set<string>([path.normalize(absolutePath)]);
 
+    // Track extends paths to detect duplicates within this link file
+    const seenExtendsPaths = new Map<string, number>(); // Map normalized path to link index
+
     // Resolve extends for each link - use flatMap to expand file-level extends
-    const resolvedLinks = links.flatMap((link) => {
+    const resolvedLinks = links.flatMap((link, index) => {
       if (!link.extends) {
         return [link];
       }
+
+      // Check for duplicate extends paths within this file
+      const extendsAbsolutePath = path.resolve(baseDir, link.extends);
+      const normalizedExtendsPath = path.normalize(extendsAbsolutePath);
+
+      if (seenExtendsPaths.has(normalizedExtendsPath)) {
+        const firstIndex = seenExtendsPaths.get(normalizedExtendsPath);
+        displayBlankLine();
+        displayWarning(
+          `Duplicate extends: links[${index}] extends "${link.extends}" which was already extended by links[${firstIndex}]. Skipping duplicate.\n`
+        );
+        return [];
+      }
+
+      seenExtendsPaths.set(normalizedExtendsPath, index);
 
       // Use file-level extends resolution to get ALL links from the extended file
       const resolution = resolveFileExtends(link.extends, baseDir, initialVisitedPaths);
