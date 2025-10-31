@@ -69,13 +69,12 @@ export async function initCommand(options: InitOptions = {}): Promise<void> {
   }
 
   // Find all link files in the repository
-  displayProcessing('Scanning for link files');
+  displayProcessing('Searching for existing link files');
 
   const linkFiles = await findLinkFiles(currentDir);
 
   if (linkFiles.length === 0) {
-    displayWarning('No link files found.');
-    displayDim(`Create one using: ${CLI_NAME} new\n`);
+    displayDim('No existing link files found - creating empty configuration.\n');
   } else {
     displaySuccess(`Found ${linkFiles.length} link file(s):`);
     const items = linkFiles.map((linkFile) => {

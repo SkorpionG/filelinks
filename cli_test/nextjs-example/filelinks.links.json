@@ -1,0 +1,10 @@
+[
+  {
+    "id": "nextjs-dashboard",
+    "name": "Next.js Dashboard Route Group",
+    "description": "Test for files in parentheses directories",
+    "watch": ["cli_test/nextjs-example/app/(dashboard)/page.tsx"],
+    "target": ["cli_test/nextjs-example/app/(dashboard)/layout.tsx"],
+    "watchType": "uncommitted"
+  }
+]
