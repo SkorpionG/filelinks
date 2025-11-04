@@ -808,9 +808,12 @@ filelinks new
 cd /path/to/repo
 filelinks init
 
-# 2. Create link files in subdirectories
+# 2. Create link files in subdirectories (you'll be prompted to add to root config)
 cd src/api
 filelinks new --empty
+
+# Or skip adding to root config
+filelinks new --empty --skip-root
 
 # 3. Edit link files manually
 # Edit src/api/filelinks.links.json
@@ -819,7 +822,7 @@ filelinks new --empty
 cd /path/to/repo
 filelinks validate
 
-# 5. Check by ID
+# 5. Check by ID (if added to root config)
 filelinks check --id api
 ```
 

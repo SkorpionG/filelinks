@@ -3,6 +3,7 @@ import * as path from 'path';
 import { newCommand } from '../../src/commands/new';
 import { DEFAULT_LINK_FILE_NAME } from '../../src/constants';
 import * as git from '../../src/utils/git';
+import * as rootConfig from '../../src/utils/rootConfig';
 
 // Mock inquirer
 const mockPrompt = jest.fn();
@@ -451,6 +452,118 @@ describe('New Command', () => {
 
       expect(content[0].watch).toEqual(['src/*.ts', 'test/*.ts']);
       expect(content[0].target).toEqual(['docs/*.md', 'README.md']);
+    });
+  });
+
+  describe('newCommand with --skip-root flag', () => {
+    it('should skip adding to root config when flag is set', async () => {
+      const addLinkFileToRootConfigSpy = jest.spyOn(rootConfig, 'addLinkFileToRootConfig');
+
+      await newCommand({ empty: true, skipRoot: true });
+
+      // Should not attempt to add to root config
+      expect(addLinkFileToRootConfigSpy).not.toHaveBeenCalled();
+
+      const linkFilePath = path.join(testDir, DEFAULT_LINK_FILE_NAME);
+      expect(fs.existsSync(linkFilePath)).toBe(true);
+    });
+
+    it('should prompt user when flag is not set', async () => {
+      // Create a mock root config file
+      const rootConfigPath = path.join(testDir, 'filelinks.config.ts');
+      const rootConfigContent = `import { RootConfig } from './types';
+
+const config: RootConfig = {
+  linkFiles: [],
+};
+
+export default config;
+`;
+      fs.writeFileSync(rootConfigPath, rootConfigContent, 'utf-8');
+
+      // Mock findRootConfigFile to return the test config path
+      jest.spyOn(rootConfig, 'findRootConfigFile').mockReturnValue(rootConfigPath);
+
+      mockPrompt
+        .mockResolvedValueOnce({ addLink: false })
+        .mockResolvedValueOnce({ addToRoot: true });
+
+      await newCommand({});
+
+      // Should prompt for adding to root config
+      expect(mockPrompt).toHaveBeenCalledWith(
+        expect.arrayContaining([
+          expect.objectContaining({
+            type: 'confirm',
+            name: 'addToRoot',
+            message: 'Add this link file to the root configuration?',
+          }),
+        ])
+      );
+    });
+
+    it('should respect user choice to skip adding to root', async () => {
+      // Create a mock root config file
+      const rootConfigPath = path.join(testDir, 'filelinks.config.ts');
+      const rootConfigContent = `import { RootConfig } from './types';
+
+const config: RootConfig = {
+  linkFiles: [],
+};
+
+export default config;
+`;
+      fs.writeFileSync(rootConfigPath, rootConfigContent, 'utf-8');
+
+      // Mock findRootConfigFile to return the test config path
+      jest.spyOn(rootConfig, 'findRootConfigFile').mockReturnValue(rootConfigPath);
+
+      const addLinkFileToRootConfigSpy = jest.spyOn(rootConfig, 'addLinkFileToRootConfig');
+
+      mockPrompt
+        .mockResolvedValueOnce({ addLink: false })
+        .mockResolvedValueOnce({ addToRoot: false });
+
+      await newCommand({});
+
+      // Should not add to root config when user declines
+      expect(addLinkFileToRootConfigSpy).not.toHaveBeenCalled();
+
+      const linkFilePath = path.join(testDir, DEFAULT_LINK_FILE_NAME);
+      expect(fs.existsSync(linkFilePath)).toBe(true);
+    });
+
+    it('should add to root config when user confirms', async () => {
+      // Create a mock root config file
+      const rootConfigPath = path.join(testDir, 'filelinks.config.ts');
+      const rootConfigContent = `import { RootConfig } from './types';
+
+const config: RootConfig = {
+  linkFiles: [],
+};
+
+export default config;
+`;
+      fs.writeFileSync(rootConfigPath, rootConfigContent, 'utf-8');
+
+      // Mock findRootConfigFile to return the test config path
+      jest.spyOn(rootConfig, 'findRootConfigFile').mockReturnValue(rootConfigPath);
+
+      const addLinkFileToRootConfigSpy = jest
+        .spyOn(rootConfig, 'addLinkFileToRootConfig')
+        .mockReturnValue(true);
+
+      mockPrompt
+        .mockResolvedValueOnce({ addLink: false })
+        .mockResolvedValueOnce({ addToRoot: true });
+
+      await newCommand({});
+
+      // Should add to root config when user confirms
+      expect(addLinkFileToRootConfigSpy).toHaveBeenCalled();
+
+      const linkFilePath = path.join(testDir, DEFAULT_LINK_FILE_NAME);
+      expect(fs.existsSync(linkFilePath)).toBe(true);
     });
   });
 });

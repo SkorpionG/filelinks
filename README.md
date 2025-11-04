@@ -145,12 +145,13 @@ export default config;
 
 Create a new link file (`filelinks.links.json`). Can be used in any directory, including subdirectories within a git repository. This allows multiple link files in different parts of your project to avoid one large config file.
 
-**When run in a git repository with a root config, the new link file is automatically added to the root configuration.**
+**When run in a git repository with a root config, you'll be prompted whether to add the new link file to the root configuration** (unless you use the `--skip-root` flag).
 
 **Options:**
 
 - `-e, --empty` - Create an empty link file
 - `-f, --force` - Overwrite existing link file
+- `-s, --skip-root` - Skip adding to root configuration
 
 **Examples:**
 
@@ -158,8 +159,14 @@ Create a new link file (`filelinks.links.json`). Can be used in any directory, i
 # Interactive setup with prompts
 filelinks new
 
-# Create empty link file
+# Create empty link file (will prompt to add to root config)
 filelinks new --empty
+
+# Skip adding to root config
+filelinks new --skip-root
+
+# Create empty file without adding to root config
+filelinks new --empty --skip-root
 
 # In a subdirectory
 cd src/api

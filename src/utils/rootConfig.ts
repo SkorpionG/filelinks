@@ -4,6 +4,23 @@ import { LinkFileReference, PartialLinkFileReference, ParsedRootConfig } from '.
 import { ROOT_CONFIG_FILE_NAME } from '../constants';
 
 /**
+ * Remove comments from TypeScript code
+ *
+ * This function removes single-line and multi-line comments from TypeScript code
+ * to prevent them from interfering with parsing.
+ *
+ * @param content - The TypeScript code content
+ * @returns The content with comments removed
+ */
+function removeComments(content: string): string {
+  // Remove multi-line comments /* ... */
+  let result = content.replace(/\/\*[\s\S]*?\*\//g, '');
+  // Remove single-line comments //...
+  result = result.replace(/\/\/.*$/gm, '');
+  return result;
+}
+
+/**
  * Parse a TypeScript config file to extract the linkFiles array
  *
  * This function uses a simple regex-based approach to parse the TypeScript
@@ -26,14 +43,21 @@ function parseLinkFilesFromContent(
 
     const linkFilesContent = linkFilesMatch[1];
 
-    // If it's empty or just comments, return empty array
-    if (!linkFilesContent.trim() || linkFilesContent.trim().startsWith('//')) {
+    // If it's empty, return empty array
+    if (!linkFilesContent.trim()) {
       return [];
     }
 
+    // Remove comments from the content before parsing
+    const contentWithoutComments = removeComments(linkFilesContent);
+
     // Parse individual link file objects
     const linkFiles: (LinkFileReference | PartialLinkFileReference)[] = [];
-    const objectMatches = linkFilesContent.matchAll(/\{([^}]*)\}/g);
+
+    // Match object literals more carefully by looking for objects that have at least one property
+    // This regex looks for opening brace, captures everything until closing brace,
+    // but requires at least one key-value pair to be present
+    const objectMatches = contentWithoutComments.matchAll(/\{([^}]*(?:id|name|path)[^}]*)\}/g);
 
     for (const match of objectMatches) {
       const objectContent = match[1];
@@ -45,11 +69,14 @@ function parseLinkFilesFromContent(
 
       if (allowPartial) {
         // Include partial objects (for validation purposes)
-        const entry: PartialLinkFileReference = {};
-        if (idMatch) entry.id = idMatch[1];
-        if (nameMatch) entry.name = nameMatch[1];
-        if (pathMatch) entry.path = pathMatch[1];
-        linkFiles.push(entry);
+        // Only include if at least one field was found
+        if (idMatch || nameMatch || pathMatch) {
+          const entry: PartialLinkFileReference = {};
+          if (idMatch) entry.id = idMatch[1];
+          if (nameMatch) entry.name = nameMatch[1];
+          if (pathMatch) entry.path = pathMatch[1];
+          linkFiles.push(entry);
+        }
       } else {
         // Only include complete objects
         if (idMatch && nameMatch && pathMatch) {
@@ -93,23 +120,30 @@ export function parseRootConfig(configPath: string): ParsedRootConfig {
 
   const linkFilesContent = linkFilesMatch[1];
 
+  // Remove comments from the content before parsing
+  const contentWithoutComments = removeComments(linkFilesContent);
+
   // Parse each link file object (including incomplete/invalid ones)
   const linkFiles: PartialLinkFileReference[] = [];
-  const objectMatches = linkFilesContent.matchAll(/\{([^}]*)\}/g);
+
+  // Match object literals more carefully by looking for objects that have at least one property
+  const objectMatches = contentWithoutComments.matchAll(/\{([^}]*(?:id|name|path)[^}]*)\}/g);
 
   for (const match of objectMatches) {
     const obj = match[1];
-    const entry: PartialLinkFileReference = {};
 
     const idMatch = obj.match(/id:\s*['"]([^'"]*)['"]/);
     const nameMatch = obj.match(/name:\s*['"]([^'"]*)['"]/);
     const pathMatch = obj.match(/path:\s*['"]([^'"]*)['"]/);
 
-    if (idMatch) entry.id = idMatch[1];
-    if (nameMatch) entry.name = nameMatch[1];
-    if (pathMatch) entry.path = pathMatch[1];
-
-    linkFiles.push(entry);
+    // Only include if at least one field was found
+    if (idMatch || nameMatch || pathMatch) {
+      const entry: PartialLinkFileReference = {};
+      if (idMatch) entry.id = idMatch[1];
+      if (nameMatch) entry.name = nameMatch[1];
+      if (pathMatch) entry.path = pathMatch[1];
+      linkFiles.push(entry);
+    }
   }
 
   return { linkFiles };

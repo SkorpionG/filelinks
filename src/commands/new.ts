@@ -25,6 +25,8 @@ export interface NewOptions {
   force?: boolean;
   /** Create an empty link file without prompts */
   empty?: boolean;
+  /** Skip adding to root config if true */
+  skipRoot?: boolean;
 }
 
 /**
@@ -38,10 +40,12 @@ export interface NewOptions {
  * - In interactive mode (default): Prompts user to add file links one by one
  * - With --empty flag: Creates an empty link file []
  * - With --force flag: Overwrites existing link file if present
+ * - With --skip-root flag: Skips adding to root config
+ * - Without --skip-root flag: Prompts user whether to add to root config
  * - Warns if not in a git repository (filelinks works best with git)
  * - Only checks current directory for existing files (not parent directories)
  *
- * @param options - Command options (force, empty)
+ * @param options - Command options (force, empty, skipRoot)
  * @returns Promise that resolves when link file is created
  *
  * @example
@@ -55,6 +59,10 @@ export interface NewOptions {
  * @example
  * // Force overwrite
  * await newCommand({ force: true });
+ *
+ * @example
+ * // Skip adding to root config
+ * await newCommand({ skipRoot: true });
  */
 export async function newCommand(options: NewOptions = {}): Promise<void> {
   displayCommandHeader(`Create new ${CLI_NAME} link file`, '');
@@ -86,7 +94,7 @@ export async function newCommand(options: NewOptions = {}): Promise<void> {
     displayDim(`  File: ${DEFAULT_LINK_FILE_NAME}`);
 
     // Try to add to root config if in a git repository
-    await tryAddToRootConfig(configPath);
+    await tryAddToRootConfig(configPath, options.skipRoot);
 
     displayDim(`Add links using: ${CLI_NAME} add <watch> <target>`);
     return;
@@ -137,7 +145,7 @@ export async function newCommand(options: NewOptions = {}): Promise<void> {
   displayDim(`  Added ${links.length} link(s)`);
 
   // Try to add to root config if in a git repository
-  await tryAddToRootConfig(configPath);
+  await tryAddToRootConfig(configPath, options.skipRoot);
 
   // Show next steps to the user
   displayInstructionList('Next steps:', [
@@ -154,8 +162,14 @@ export async function newCommand(options: NewOptions = {}): Promise<void> {
  * and adds the new link file reference to it if possible.
  *
  * @param linkFilePath - Absolute path to the newly created link file
+ * @param skipRoot - If true, skip adding to root config. If undefined, prompt the user.
  */
-async function tryAddToRootConfig(linkFilePath: string): Promise<void> {
+async function tryAddToRootConfig(linkFilePath: string, skipRoot?: boolean): Promise<void> {
+  // If skipRoot flag is explicitly set, skip adding to root config
+  if (skipRoot === true) {
+    displayDim('Skipping root configuration update (--skip-root flag).');
+    return;
+  }
   // Find git root
   const gitRoot = findGitRoot();
   if (!gitRoot) {
@@ -170,6 +184,23 @@ async function tryAddToRootConfig(linkFilePath: string): Promise<void> {
     displayWarning('No root configuration found.');
     displayDim(`  Run "${CLI_NAME} init" at the git root to create one.`);
     return;
+  }
+
+  // If skipRoot is undefined (not explicitly set), prompt the user
+  if (skipRoot === undefined) {
+    const { addToRoot } = await inquirer.prompt<{ addToRoot: boolean }>([
+      {
+        type: 'confirm',
+        name: 'addToRoot',
+        message: 'Add this link file to the root configuration?',
+        default: true,
+      },
+    ]);
+
+    if (!addToRoot) {
+      displayDim('Skipping root configuration update.');
+      return;
+    }
   }
 
   // Create link file reference

@@ -1,5 +1,23 @@
 # Changelog
 
+## [0.3.2] - 2025-11-03
+
+### Added
+
+- **`--skip-root` flag for `filelinks new` command**: Control whether new link files are added to root configuration
+  - `-s, --skip-root` flag skips adding to root config entirely
+  - Without the flag, users are prompted: "Add this link file to the root configuration?" (defaults to yes)
+  - Provides flexibility for temporary or experimental link files
+  - Useful when you want to create a link file without modifying the root config
+
+### Fixed
+
+- **Root config parsing with comments**: Fixed bug where comments containing braces in `filelinks.config.ts` would break link structure
+  - Comments with `{ }` characters were incorrectly parsed as empty link entries
+  - Added comment removal before parsing to prevent interference
+  - Improved regex to only match objects with actual properties (id, name, or path)
+  - Ensures robust parsing even with extensive code comments
+
 ## [0.3.1] - 2025-10-30
 
 ### Fixed

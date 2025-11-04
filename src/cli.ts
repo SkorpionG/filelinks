@@ -36,6 +36,7 @@ program
   .description('Create a new link file (JSON) - can be used in any directory')
   .option('-f, --force', 'Overwrite existing link file')
   .option('-e, --empty', 'Create an empty link file')
+  .option('-s, --skip-root', 'Skip adding to root configuration')
   .action(async (options) => {
     try {
       await newCommand(options);
