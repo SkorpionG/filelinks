@@ -272,7 +272,7 @@ async function processLinkFile(
     const links = configManager.loadConfig(linkFilePath);
 
     // First validate the original links to catch warnings about ignored properties with extends
-    const originalValidation = validateLinksConfig(links, gitRoot);
+    const originalValidation = await validateLinksConfig(links, gitRoot);
 
     // Create initial visited set with the current file to detect self-reference
     const initialVisitedPaths = new Set<string>([path.normalize(absolutePath)]);
@@ -348,7 +348,7 @@ async function processLinkFile(
     });
 
     // Validate the links config (paths are relative to git root, not link file dir)
-    const linksValidation = validateLinksConfig(resolvedLinks, gitRoot);
+    const linksValidation = await validateLinksConfig(resolvedLinks, gitRoot);
 
     // Merge extends-related warnings from original validation
     originalValidation.warnings.forEach((warning) => {
@@ -372,11 +372,15 @@ async function processLinkFile(
     // Filter out invalid links if requested
     let validLinks = resolvedLinks;
     if (options.filterInvalidLinks) {
-      validLinks = resolvedLinks.filter((link) => {
+      const validationPromises = resolvedLinks.map(async (link) => {
         // Check if this specific link has errors
-        const singleLinkValidation = validateLinksConfig([link], gitRoot);
-        return singleLinkValidation.valid;
+        const singleLinkValidation = await validateLinksConfig([link], gitRoot);
+        return singleLinkValidation.valid ? link : null;
       });
+      const validationResults = await Promise.all(validationPromises);
+      validLinks = validationResults.filter(
+        (link): link is NonNullable<typeof link> => link !== null
+      );
     }
 
     return {
@@ -478,7 +482,7 @@ export async function validateLinkFiles(
       const links = configManager.loadConfig(linkFilePath);
 
       // First validate the original links to catch warnings about ignored properties with extends
-      const originalValidation = validateLinksConfig(links, gitRoot);
+      const originalValidation = await validateLinksConfig(links, gitRoot);
 
       // Create initial visited set with the current file to detect self-reference
       const initialVisitedPaths = new Set<string>([path.normalize(absolutePath)]);
@@ -545,7 +549,7 @@ export async function validateLinkFiles(
       });
 
       // Paths are relative to git root, not link file directory
-      const linksValidation = validateLinksConfig(resolvedLinks, gitRoot);
+      const linksValidation = await validateLinksConfig(resolvedLinks, gitRoot);
 
       // Merge extends-related warnings from original validation
       originalValidation.warnings.forEach((warning) => {

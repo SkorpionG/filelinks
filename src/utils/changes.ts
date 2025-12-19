@@ -1,6 +1,8 @@
 import { simpleGit, SimpleGit, StatusResult } from 'simple-git';
 import { WatchType } from '../types';
+import { glob } from 'glob';
 import * as path from 'path';
+import * as fs from 'fs';
 
 /**
  * Git change detection utilities for filelinks
@@ -134,5 +136,49 @@ export async function getLastCommitInfo(
   } catch {
     // File might not be committed yet
     return null;
+  }
+}
+
+/**
+ * Check if a pattern contains glob wildcards
+ *
+ * @param pattern - Pattern to check
+ * @returns True if pattern contains glob wildcards
+ */
+export function isGlobPattern(pattern: string): boolean {
+  return pattern.includes('*') || pattern.includes('?');
+}
+
+/**
+ * Find files matching a pattern (supports both regular paths and glob patterns)
+ *
+ * @param pattern - File pattern to match (can be a regular path or glob pattern)
+ * @param baseDir - Base directory to resolve relative paths
+ * @returns Promise resolving to array of matching file paths (relative to baseDir)
+ */
+export async function findFilesMatchingPattern(
+  pattern: string,
+  baseDir: string
+): Promise<string[]> {
+  // If it's not a glob pattern, check if the file exists directly
+  if (!isGlobPattern(pattern)) {
+    const absolutePath = path.resolve(baseDir, pattern);
+    if (fs.existsSync(absolutePath) && fs.statSync(absolutePath).isFile()) {
+      return [pattern];
+    }
+    return [];
+  }
+
+  // It's a glob pattern, use glob to find matching files
+  try {
+    const matches = await glob(pattern, {
+      cwd: baseDir,
+      nodir: true, // Only return files, not directories
+      dot: true, // Include dotfiles
+    });
+    return matches;
+  } catch {
+    // If glob fails, return empty array
+    return [];
   }
 }

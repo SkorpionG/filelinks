@@ -1,7 +1,13 @@
 import chalk from 'chalk';
 import { configManager } from '../config';
 import { FileLinkConfigArray, FileLinkConfig } from '../types';
-import { getChangedFiles, findMatchingFiles, getLastCommitInfo } from '../utils/changes';
+import {
+  getChangedFiles,
+  findMatchingFiles,
+  getLastCommitInfo,
+  isGlobPattern,
+  findFilesMatchingPattern,
+} from '../utils/changes';
 import { requireGitRepository } from '../utils/commandHelpers';
 import { CLI_NAME } from '../constants';
 import { validateLinkFilePath } from '../utils/linkFileValidation';
@@ -372,9 +378,32 @@ async function printLinkWarning(
   displayBlankLine();
   displayHeader(`  Please review these target files:`);
   for (const target of link.target || []) {
-    const targetPath = path.join(gitRoot, target);
-    const exists = fs.existsSync(targetPath);
-    displayStatus(target, exists);
+    // Check if target is a glob pattern
+    if (isGlobPattern(target)) {
+      // Find all files matching the pattern
+      const matchedFiles = await findFilesMatchingPattern(target, gitRoot);
+
+      if (matchedFiles.length === 0) {
+        // No files match the pattern - show warning
+        displayStatus(target, false);
+        displayDim(`      (pattern matches 0 files)`);
+      } else {
+        // Show the pattern and all matched files
+        console.log(chalk.dim(`    ${target}:`));
+        for (const matchedFile of matchedFiles) {
+          const matchedPath = path.join(gitRoot, matchedFile);
+          const exists = fs.existsSync(matchedPath);
+          console.log(
+            chalk.dim(`      • ${matchedFile}`) + (exists ? chalk.green(' ✓') : chalk.red(' ✗'))
+          );
+        }
+      }
+    } else {
+      // Regular file path
+      const targetPath = path.join(gitRoot, target);
+      const exists = fs.existsSync(targetPath);
+      displayStatus(target, exists);
+    }
   }
 
   displayBlankLine();

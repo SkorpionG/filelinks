@@ -133,7 +133,7 @@ async function validateSpecificFile(filePath: string): Promise<void> {
     const links = configManager.loadConfig(absolutePath);
 
     // First validate the original links (to catch warnings about ignored properties with extends)
-    const originalValidation = validateLinksConfig(links, baseDir);
+    const originalValidation = await validateLinksConfig(links, baseDir);
 
     // Show extends information and resolve
     const hasExtends = links.some((link) => link.extends);
@@ -224,7 +224,7 @@ async function validateSpecificFile(filePath: string): Promise<void> {
     }
 
     // Validate the resolved links
-    const validation = validateLinksConfig(resolvedLinks, baseDir);
+    const validation = await validateLinksConfig(resolvedLinks, baseDir);
 
     // Merge warnings from original validation (for extends-related warnings)
     originalValidation.warnings.forEach((warning) => {
@@ -379,7 +379,7 @@ async function validateLocalConfig(): Promise<void> {
       displayError(ERROR_MESSAGES.GIT_ROOT_NOT_FOUND);
       process.exit(1);
     }
-    const validation = validateLinksConfig(links, gitRoot);
+    const validation = await validateLinksConfig(links, gitRoot);
 
     if (validation.errors.length > 0) {
       displayError('Link file has errors:\n');

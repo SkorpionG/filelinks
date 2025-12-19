@@ -71,5 +71,13 @@
     "description": "Test for same watch and target file",
     "id": "cli-test-same-watch-and-target"
   },
-  {}
+  {},
+  {
+    "target": ["cli_test/changes-glob-target/**/*.md"],
+    "watch": ["cli_test/changes-glob-watch/*.md"],
+    "watchType": "uncommitted",
+    "name": "CLI Test Changes Glob",
+    "description": "Test for glob pattern in watch",
+    "id": "cli-test-changes-glob"
+  }
 ]

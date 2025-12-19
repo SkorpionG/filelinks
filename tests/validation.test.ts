@@ -25,7 +25,7 @@ describe('Validation', () => {
 
   describe('validateRootConfig', () => {
     describe('Structure Validation', () => {
-      it('should accept valid root config', () => {
+      it('should accept valid root config', async () => {
         const testFile = path.join(tempDir, 'filelinks.links.json');
         fs.writeFileSync(testFile, '[]');
 
@@ -38,7 +38,7 @@ describe('Validation', () => {
         expect(result.errors).toHaveLength(0);
       });
 
-      it('should reject config without linkFiles property', () => {
+      it('should reject config without linkFiles property', async () => {
         const config = {} as RootConfig;
         const result = validateRootConfig(config, tempDir);
 
@@ -47,7 +47,7 @@ describe('Validation', () => {
         expect(result.errors[0].message).toContain('must have a "linkFiles" property');
       });
 
-      it('should reject config with non-array linkFiles', () => {
+      it('should reject config with non-array linkFiles', async () => {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const config = { linkFiles: 'not-an-array' } as any;
         const result = validateRootConfig(config, tempDir);
@@ -56,7 +56,7 @@ describe('Validation', () => {
         expect(result.errors[0].message).toContain('"linkFiles" must be an array');
       });
 
-      it('should warn about empty linkFiles array', () => {
+      it('should warn about empty linkFiles array', async () => {
         const config: RootConfig = { linkFiles: [] };
         const result = validateRootConfig(config, tempDir);
 
@@ -67,7 +67,7 @@ describe('Validation', () => {
     });
 
     describe('Property Validation', () => {
-      it('should reject linkFile without id property', () => {
+      it('should reject linkFile without id property', async () => {
         const config: RootConfig = {
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           linkFiles: [{ name: 'Test', path: './test.json' } as any],
@@ -78,7 +78,7 @@ describe('Validation', () => {
         expect(result.errors.some((e) => e.message.includes('"id" property'))).toBe(true);
       });
 
-      it('should reject linkFile with empty id string', () => {
+      it('should reject linkFile with empty id string', async () => {
         const config: RootConfig = {
           linkFiles: [{ id: '  ', name: 'Test', path: './test.json' }],
         };
@@ -90,7 +90,7 @@ describe('Validation', () => {
         );
       });
 
-      it('should reject linkFile without name property', () => {
+      it('should reject linkFile without name property', async () => {
         const config: RootConfig = {
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           linkFiles: [{ id: 'test', path: './test.json' } as any],
@@ -101,7 +101,7 @@ describe('Validation', () => {
         expect(result.errors.some((e) => e.message.includes('"name" property'))).toBe(true);
       });
 
-      it('should reject linkFile without path property', () => {
+      it('should reject linkFile without path property', async () => {
         const config: RootConfig = {
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           linkFiles: [{ id: 'test', name: 'Test' } as any],
@@ -112,7 +112,7 @@ describe('Validation', () => {
         expect(result.errors.some((e) => e.message.includes('"path" property'))).toBe(true);
       });
 
-      it('should reject linkFile with non-string properties', () => {
+      it('should reject linkFile with non-string properties', async () => {
         const config: RootConfig = {
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           linkFiles: [{ id: 123, name: true, path: null } as any],
@@ -123,7 +123,7 @@ describe('Validation', () => {
         expect(result.errors.length).toBeGreaterThan(0);
       });
 
-      it('should reject empty object as linkFile', () => {
+      it('should reject empty object as linkFile', async () => {
         const config: RootConfig = {
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           linkFiles: [{}] as any,
@@ -136,7 +136,7 @@ describe('Validation', () => {
     });
 
     describe('Duplicate Detection', () => {
-      it('should detect duplicate IDs', () => {
+      it('should detect duplicate IDs', async () => {
         const testFile = path.join(tempDir, 'test.json');
         fs.writeFileSync(testFile, '[]');
 
@@ -152,7 +152,7 @@ describe('Validation', () => {
         expect(result.errors.some((e) => e.message.includes('Duplicate link file ID'))).toBe(true);
       });
 
-      it('should detect duplicate paths with different formats', () => {
+      it('should detect duplicate paths with different formats', async () => {
         const testFile = path.join(tempDir, 'test.json');
         fs.writeFileSync(testFile, '[]');
 
@@ -172,7 +172,7 @@ describe('Validation', () => {
     });
 
     describe('File Validation', () => {
-      it('should reject non-existent file', () => {
+      it('should reject non-existent file', async () => {
         const config: RootConfig = {
           linkFiles: [{ id: 'test', name: 'Test', path: './nonexistent.json' }],
         };
@@ -182,7 +182,7 @@ describe('Validation', () => {
         expect(result.errors.some((e) => e.message.includes('does not exist'))).toBe(true);
       });
 
-      it('should reject directory as file path', () => {
+      it('should reject directory as file path', async () => {
         const testDir = path.join(tempDir, 'testdir');
         fs.mkdirSync(testDir);
 
@@ -195,7 +195,7 @@ describe('Validation', () => {
         expect(result.errors.some((e) => e.message.includes('not a file'))).toBe(true);
       });
 
-      it('should reject file with invalid name', () => {
+      it('should reject file with invalid name', async () => {
         const testFile = path.join(tempDir, 'invalid.txt');
         fs.writeFileSync(testFile, '[]');
 
@@ -210,7 +210,7 @@ describe('Validation', () => {
     });
 
     describe('Security Validation', () => {
-      it('should reject path outside repository (parent directory)', () => {
+      it('should reject path outside repository (parent directory)', async () => {
         const config: RootConfig = {
           linkFiles: [{ id: 'test', name: 'Test', path: '../outside.json' }],
         };
@@ -220,7 +220,7 @@ describe('Validation', () => {
         expect(result.errors.some((e) => e.message.includes('outside the repository'))).toBe(true);
       });
 
-      it('should reject absolute path', () => {
+      it('should reject absolute path', async () => {
         const config: RootConfig = {
           linkFiles: [{ id: 'test', name: 'Test', path: '/absolute/path.json' }],
         };
@@ -230,7 +230,7 @@ describe('Validation', () => {
         expect(result.errors.some((e) => e.message.includes('outside the repository'))).toBe(true);
       });
 
-      it('should reject path traversal attempts', () => {
+      it('should reject path traversal attempts', async () => {
         const config: RootConfig = {
           linkFiles: [{ id: 'test', name: 'Test', path: '../../etc/passwd' }],
         };
@@ -244,7 +244,7 @@ describe('Validation', () => {
 
   describe('validateLinksConfig', () => {
     describe('Structure Validation', () => {
-      it('should accept valid links config', () => {
+      it('should accept valid links config', async () => {
         const watchFile = path.join(tempDir, 'watch.md');
         const targetFile = path.join(tempDir, 'target.md');
         fs.writeFileSync(watchFile, '');
@@ -259,23 +259,23 @@ describe('Validation', () => {
           },
         ];
 
-        const result = validateLinksConfig(config, tempDir);
+        const result = await validateLinksConfig(config, tempDir);
         expect(result.valid).toBe(true);
         expect(result.errors).toHaveLength(0);
       });
 
-      it('should reject non-array config', () => {
+      it('should reject non-array config', async () => {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const config = {} as any;
-        const result = validateLinksConfig(config, tempDir);
+        const result = await validateLinksConfig(config, tempDir);
 
         expect(result.valid).toBe(false);
         expect(result.errors[0].message).toContain('must be an array');
       });
 
-      it('should warn about empty array', () => {
+      it('should warn about empty array', async () => {
         const config: FileLinkConfigArray = [];
-        const result = validateLinksConfig(config, tempDir);
+        const result = await validateLinksConfig(config, tempDir);
 
         expect(result.valid).toBe(true);
         expect(result.warnings).toHaveLength(1);
@@ -284,112 +284,112 @@ describe('Validation', () => {
     });
 
     describe('Required Properties', () => {
-      it('should reject link without watch property', () => {
+      it('should reject link without watch property', async () => {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const config: FileLinkConfigArray = [{ target: ['file.md'] } as any];
 
-        const result = validateLinksConfig(config, tempDir);
+        const result = await validateLinksConfig(config, tempDir);
         expect(result.valid).toBe(false);
         expect(result.errors.some((e) => e.message.includes('"watch" array'))).toBe(true);
       });
 
-      it('should reject link without target property', () => {
+      it('should reject link without target property', async () => {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const config: FileLinkConfigArray = [{ watch: ['file.md'] } as any];
 
-        const result = validateLinksConfig(config, tempDir);
+        const result = await validateLinksConfig(config, tempDir);
         expect(result.valid).toBe(false);
         expect(result.errors.some((e) => e.message.includes('"target" array'))).toBe(true);
       });
 
-      it('should reject link with empty watch array', () => {
+      it('should reject link with empty watch array', async () => {
         const config: FileLinkConfigArray = [{ watch: [], target: ['file.md'] }];
 
-        const result = validateLinksConfig(config, tempDir);
+        const result = await validateLinksConfig(config, tempDir);
         expect(result.valid).toBe(false);
         expect(result.errors.some((e) => e.message.includes('cannot be empty'))).toBe(true);
       });
 
-      it('should reject link with empty target array', () => {
+      it('should reject link with empty target array', async () => {
         const config: FileLinkConfigArray = [{ watch: ['file.md'], target: [] }];
 
-        const result = validateLinksConfig(config, tempDir);
+        const result = await validateLinksConfig(config, tempDir);
         expect(result.valid).toBe(false);
         expect(result.errors.some((e) => e.message.includes('cannot be empty'))).toBe(true);
       });
     });
 
     describe('WatchType Validation', () => {
-      it('should accept valid watchType values', () => {
+      it('should accept valid watchType values', async () => {
         const validTypes = ['uncommitted', 'unstaged', 'staged'] as const;
 
-        validTypes.forEach((watchType) => {
+        for (const watchType of validTypes) {
           const config: FileLinkConfigArray = [{ watch: ['*.md'], target: ['*.txt'], watchType }];
 
-          const result = validateLinksConfig(config, tempDir);
+          const result = await validateLinksConfig(config, tempDir);
           expect(result.errors.some((e) => e.message.includes('Invalid watchType'))).toBe(false);
-        });
+        }
       });
 
-      it('should reject invalid watchType', () => {
+      it('should reject invalid watchType', async () => {
         const config: FileLinkConfigArray = [
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           { watch: ['*.md'], target: ['*.txt'], watchType: 'invalid' as any },
         ];
 
-        const result = validateLinksConfig(config, tempDir);
+        const result = await validateLinksConfig(config, tempDir);
         expect(result.valid).toBe(false);
         expect(result.errors.some((e) => e.message.includes('Invalid watchType'))).toBe(true);
       });
     });
 
     describe('Duplicate Detection', () => {
-      it('should detect duplicate IDs', () => {
+      it('should detect duplicate IDs', async () => {
         const config: FileLinkConfigArray = [
           { id: 'test', watch: ['file1.md'], target: ['target1.md'] },
           { id: 'test', watch: ['file2.md'], target: ['target2.md'] },
         ];
 
-        const result = validateLinksConfig(config, tempDir);
+        const result = await validateLinksConfig(config, tempDir);
         expect(result.valid).toBe(false);
         expect(result.errors.some((e) => e.message.includes('Duplicate link ID'))).toBe(true);
       });
 
-      it('should warn about duplicate link configurations', () => {
+      it('should warn about duplicate link configurations', async () => {
         const config: FileLinkConfigArray = [
           { watch: ['file.md'], target: ['target.md'], watchType: 'uncommitted' },
           { watch: ['file.md'], target: ['target.md'], watchType: 'uncommitted' },
         ];
 
-        const result = validateLinksConfig(config, tempDir);
+        const result = await validateLinksConfig(config, tempDir);
         expect(result.warnings.some((w) => w.message.includes('Duplicate link'))).toBe(true);
       });
     });
 
     describe('Watch and Target Same File Validation', () => {
-      it('should reject when watch and target point to same file', () => {
+      it('should reject when watch and target point to same file', async () => {
         const config: FileLinkConfigArray = [{ watch: ['file.md'], target: ['file.md'] }];
 
-        const result = validateLinksConfig(config, tempDir);
+        const result = await validateLinksConfig(config, tempDir);
         expect(result.valid).toBe(false);
         expect(result.errors.some((e) => e.message.includes('cannot point to the same file'))).toBe(
           true
         );
       });
 
-      it('should reject when watch and target have overlapping files', () => {
+      it('should reject when watch and target have overlapping files', async () => {
         const config: FileLinkConfigArray = [
           { watch: ['file1.md', 'file2.md'], target: ['file2.md', 'file3.md'] },
         ];
 
-        const result = validateLinksConfig(config, tempDir);
+        const result = await validateLinksConfig(config, tempDir);
         expect(result.valid).toBe(false);
         expect(result.errors.some((e) => e.message.includes('cannot point to the same file'))).toBe(
           true
         );
       });
 
-      it('should accept when watch and target point to different files', () => {
+      it('should accept when watch and target point to different files', async () => {
         const watchFile = path.join(tempDir, 'watch.md');
         const targetFile = path.join(tempDir, 'target.md');
         fs.writeFileSync(watchFile, '');
@@ -402,7 +402,7 @@ describe('Validation', () => {
           },
         ];
 
-        const result = validateLinksConfig(config, tempDir);
+        const result = await validateLinksConfig(config, tempDir);
         expect(result.errors.some((e) => e.message.includes('cannot point to the same file'))).toBe(
           false
         );
@@ -410,17 +410,17 @@ describe('Validation', () => {
     });
 
     describe('File Existence Validation', () => {
-      it('should warn when watch file does not exist (non-glob)', () => {
+      it('should warn when watch file does not exist (non-glob)', async () => {
         const config: FileLinkConfigArray = [{ watch: ['nonexistent.md'], target: ['*.txt'] }];
 
-        const result = validateLinksConfig(config, tempDir);
+        const result = await validateLinksConfig(config, tempDir);
         expect(result.warnings.some((w) => w.message.includes('does not exist'))).toBe(true);
       });
 
-      it('should not warn for glob patterns', () => {
+      it('should not warn for glob patterns', async () => {
         const config: FileLinkConfigArray = [{ watch: ['**/*.md'], target: ['**/*.txt'] }];
 
-        const result = validateLinksConfig(config, tempDir);
+        const result = await validateLinksConfig(config, tempDir);
         expect(
           result.warnings.some(
             (w) => w.message.includes('does not exist') && w.context?.includes('watch')
@@ -428,7 +428,7 @@ describe('Validation', () => {
         ).toBe(false);
       });
 
-      it('should reject when watch path is a directory', () => {
+      it('should reject when watch path is a directory', async () => {
         const testDir = path.join(tempDir, 'testdir');
         fs.mkdirSync(testDir);
 
@@ -436,12 +436,12 @@ describe('Validation', () => {
           { watch: [path.relative(tempDir, testDir)], target: ['*.txt'] },
         ];
 
-        const result = validateLinksConfig(config, tempDir);
+        const result = await validateLinksConfig(config, tempDir);
         expect(result.valid).toBe(false);
         expect(result.errors.some((e) => e.message.includes('directory, not a file'))).toBe(true);
       });
 
-      it('should reject when target path is a directory', () => {
+      it('should reject when target path is a directory', async () => {
         const testDir = path.join(tempDir, 'testdir');
         fs.mkdirSync(testDir);
 
@@ -449,47 +449,47 @@ describe('Validation', () => {
           { watch: ['*.md'], target: [path.relative(tempDir, testDir)] },
         ];
 
-        const result = validateLinksConfig(config, tempDir);
+        const result = await validateLinksConfig(config, tempDir);
         expect(result.valid).toBe(false);
         expect(result.errors.some((e) => e.message.includes('directory, not a file'))).toBe(true);
       });
     });
 
     describe('Type Validation', () => {
-      it('should reject non-string watch patterns', () => {
+      it('should reject non-string watch patterns', async () => {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const config: FileLinkConfigArray = [{ watch: [123] as any, target: ['file.md'] }];
 
-        const result = validateLinksConfig(config, tempDir);
+        const result = await validateLinksConfig(config, tempDir);
         expect(result.valid).toBe(false);
         expect(result.errors.some((e) => e.message.includes('must be a string'))).toBe(true);
       });
 
-      it('should reject non-string target patterns', () => {
+      it('should reject non-string target patterns', async () => {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const config: FileLinkConfigArray = [{ watch: ['file.md'], target: [null] as any }];
 
-        const result = validateLinksConfig(config, tempDir);
+        const result = await validateLinksConfig(config, tempDir);
         expect(result.valid).toBe(false);
         expect(result.errors.some((e) => e.message.includes('must be a string'))).toBe(true);
       });
     });
 
     describe('Path Normalization', () => {
-      it('should normalize paths when checking for duplicates', () => {
+      it('should normalize paths when checking for duplicates', async () => {
         const config: FileLinkConfigArray = [{ watch: ['./file.md'], target: ['file.md'] }];
 
-        const result = validateLinksConfig(config, tempDir);
+        const result = await validateLinksConfig(config, tempDir);
         expect(result.valid).toBe(false);
         expect(result.errors.some((e) => e.message.includes('cannot point to the same file'))).toBe(
           true
         );
       });
 
-      it('should handle paths with different separators', () => {
+      it('should handle paths with different separators', async () => {
         const config: FileLinkConfigArray = [{ watch: ['dir/file.md'], target: ['dir/file.md'] }];
 
-        const result = validateLinksConfig(config, tempDir);
+        const result = await validateLinksConfig(config, tempDir);
         expect(result.valid).toBe(false);
         expect(result.errors.some((e) => e.message.includes('cannot point to the same file'))).toBe(
           true
@@ -498,38 +498,38 @@ describe('Validation', () => {
     });
 
     describe('Extends Property Validation', () => {
-      it('should reject link with non-string extends', () => {
+      it('should reject link with non-string extends', async () => {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const config: FileLinkConfigArray = [{ extends: 123 as any, watch: [], target: [] }];
 
-        const result = validateLinksConfig(config, tempDir);
+        const result = await validateLinksConfig(config, tempDir);
         expect(result.valid).toBe(false);
         expect(result.errors.some((e) => e.message.includes('"extends" must be a string'))).toBe(
           true
         );
       });
 
-      it('should reject link with empty string extends', () => {
+      it('should reject link with empty string extends', async () => {
         const config: FileLinkConfigArray = [{ extends: '  ', watch: [], target: [] }];
 
-        const result = validateLinksConfig(config, tempDir);
+        const result = await validateLinksConfig(config, tempDir);
         expect(result.valid).toBe(false);
         expect(result.errors.some((e) => e.message.includes('cannot be an empty string'))).toBe(
           true
         );
       });
 
-      it('should reject link with extends pointing to non-existent file', () => {
+      it('should reject link with extends pointing to non-existent file', async () => {
         const config: FileLinkConfigArray = [
           { extends: './nonexistent.links.json', watch: [], target: [] },
         ];
 
-        const result = validateLinksConfig(config, tempDir);
+        const result = await validateLinksConfig(config, tempDir);
         expect(result.valid).toBe(false);
         expect(result.errors.some((e) => e.message.includes('does not exist'))).toBe(true);
       });
 
-      it('should reject link with extends pointing to directory', () => {
+      it('should reject link with extends pointing to directory', async () => {
         const testDir = path.join(tempDir, 'testdir');
         fs.mkdirSync(testDir);
 
@@ -537,12 +537,12 @@ describe('Validation', () => {
           { extends: path.relative(tempDir, testDir), watch: [], target: [] },
         ];
 
-        const result = validateLinksConfig(config, tempDir);
+        const result = await validateLinksConfig(config, tempDir);
         expect(result.valid).toBe(false);
         expect(result.errors.some((e) => e.message.includes('not a file'))).toBe(true);
       });
 
-      it('should accept valid extends property', () => {
+      it('should accept valid extends property', async () => {
         const extendsFile = path.join(tempDir, 'base.links.json');
         fs.writeFileSync(extendsFile, '[]');
 
@@ -550,14 +550,14 @@ describe('Validation', () => {
           { extends: path.relative(tempDir, extendsFile), watch: [], target: [] },
         ];
 
-        const result = validateLinksConfig(config, tempDir);
+        const result = await validateLinksConfig(config, tempDir);
         // Should not have extends-related errors
         expect(
           result.errors.some((e) => e.message.includes('"extends"') && e.type === 'error')
         ).toBe(false);
       });
 
-      it('should warn when extends is set with watch, target, or watchType', () => {
+      it('should warn when extends is set with watch, target, or watchType', async () => {
         const extendsFile = path.join(tempDir, 'base.links.json');
         fs.writeFileSync(extendsFile, '[]');
 
@@ -579,7 +579,7 @@ describe('Validation', () => {
           },
         ];
 
-        const result = validateLinksConfig(config, tempDir);
+        const result = await validateLinksConfig(config, tempDir);
         expect(result.warnings).toHaveLength(1);
         expect(result.warnings[0].message).toContain(
           'extends" is set but the following properties are also provided and will be ignored'
@@ -592,7 +592,7 @@ describe('Validation', () => {
         expect(result.warnings[0].message).toContain('watch, target, watchType');
       });
 
-      it('should allow name and description with extends', () => {
+      it('should allow name and description with extends', async () => {
         const extendsFile = path.join(tempDir, 'base.links.json');
         fs.writeFileSync(extendsFile, '[]');
 
@@ -605,13 +605,13 @@ describe('Validation', () => {
           },
         ];
 
-        const result = validateLinksConfig(config, tempDir);
+        const result = await validateLinksConfig(config, tempDir);
         // Should have no warnings about name and description
         expect(result.warnings).toHaveLength(0);
         expect(result.valid).toBe(true);
       });
 
-      it('should allow extends without watch and target', () => {
+      it('should allow extends without watch and target', async () => {
         const extendsFile = path.join(tempDir, 'base.links.json');
         fs.writeFileSync(extendsFile, '[]');
 
@@ -619,7 +619,7 @@ describe('Validation', () => {
           { extends: path.relative(tempDir, extendsFile), watch: [], target: [] },
         ];
 
-        const result = validateLinksConfig(config, tempDir);
+        const result = await validateLinksConfig(config, tempDir);
         // Should not require watch and target when extends is set
         expect(
           result.errors.some((e) => e.message.includes('"watch" array') && e.type === 'error')
@@ -629,10 +629,10 @@ describe('Validation', () => {
         ).toBe(false);
       });
 
-      it('should require watch and target when extends is not set', () => {
+      it('should require watch and target when extends is not set', async () => {
         const config: FileLinkConfigArray = [{ watch: [], target: [] }];
 
-        const result = validateLinksConfig(config, tempDir);
+        const result = await validateLinksConfig(config, tempDir);
         expect(result.valid).toBe(false);
         expect(result.errors.some((e) => e.message.includes('"watch" array'))).toBe(true);
         expect(result.errors.some((e) => e.message.includes('"target" array'))).toBe(true);

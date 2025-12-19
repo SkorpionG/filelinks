@@ -8,4 +8,5 @@ module.exports = {
   coverageReporters: ['text', 'lcov', 'html'],
   moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json', 'node'],
   verbose: true,
+  watchman: false, // Disable watchman to avoid permission issues
 };

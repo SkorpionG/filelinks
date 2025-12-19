@@ -1,5 +1,23 @@
 # Changelog
 
+## [0.3.3] - 2025-12-19
+
+### Added
+
+- **Enhanced glob pattern validation**: Glob patterns in `watch` and `target` fields now validate that at least one file matches
+  - If a glob pattern (containing `*`, `**`, or `?`) matches no files, a **warning** is displayed during validation
+  - Helps catch typos and ensures patterns are configured correctly
+  - Example: `docs/**/*.md` with no markdown files → `"Target pattern does not match any files: docs/**/*.md"`
+  - Applies to both watch and target patterns
+  - Previously, glob patterns were silently ignored during validation
+
+- **Expanded glob pattern display in check command**: Target glob patterns are now expanded to show all matching files
+  - When a target uses a glob pattern, `filelinks check` now shows all files that match
+  - Each matched file is displayed with its existence status (✓ or ✗)
+  - Pattern shown as a header with matched files indented below
+  - If no files match, shows `(pattern matches 0 files)` warning
+  - Makes it clear exactly which files need review when changes are detected
+
 ## [0.3.2] - 2025-11-03
 
 ### Added

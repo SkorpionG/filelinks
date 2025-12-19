@@ -2,6 +2,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { RootConfig, ParsedRootConfig, FileLinkConfigArray, WatchType } from '../types';
 import { LINK_FILE_NAMES } from '../constants';
+import { isGlobPattern, findFilesMatchingPattern } from './changes';
 
 /**
  * Validation error or warning
@@ -232,13 +233,16 @@ export function validateRootConfig(
  * - watchType is valid if specified
  * - No duplicate IDs in links
  * - All watch files exist and are files (not directories)
- * - All target files exist and are files (not directories)
+ * - All target files/patterns exist and match at least one file
  *
  * @param links - The links configuration to validate
  * @param baseDir - The base directory for resolving relative paths
  * @returns Validation result with errors and warnings
  */
-export function validateLinksConfig(links: FileLinkConfigArray, baseDir: string): ValidationResult {
+export async function validateLinksConfig(
+  links: FileLinkConfigArray,
+  baseDir: string
+): Promise<ValidationResult> {
   const errors: ValidationIssue[] = [];
   const warnings: ValidationIssue[] = [];
 
@@ -260,7 +264,8 @@ export function validateLinksConfig(links: FileLinkConfigArray, baseDir: string)
   const seenIds = new Set<string>();
   const seenLinkSignatures = new Map<string, number>(); // Map signature to first occurrence index
 
-  links.forEach((link, index) => {
+  for (let index = 0; index < links.length; index++) {
+    const link = links[index];
     const context = `links[${index}]`;
 
     // Validate extends property if present
@@ -417,18 +422,30 @@ export function validateLinksConfig(links: FileLinkConfigArray, baseDir: string)
 
     // Validate watch files exist and are files (not directories)
     if (link.watch && Array.isArray(link.watch)) {
-      link.watch.forEach((watchPattern, watchIndex) => {
+      for (let watchIndex = 0; watchIndex < link.watch.length; watchIndex++) {
+        const watchPattern = link.watch[watchIndex];
         if (typeof watchPattern !== 'string') {
           errors.push({
             type: 'error',
             message: `Watch pattern must be a string, got: ${typeof watchPattern}`,
             context: `${context}.watch[${watchIndex}]`,
           });
-          return;
+          continue;
         }
 
-        // Only validate if it's not a glob pattern (contains *, **, ?)
-        if (!watchPattern.includes('*') && !watchPattern.includes('?')) {
+        // Check if it's a glob pattern
+        if (isGlobPattern(watchPattern)) {
+          // For glob patterns, check if at least one file matches
+          const matches = await findFilesMatchingPattern(watchPattern, baseDir);
+          if (matches.length === 0) {
+            warnings.push({
+              type: 'warning',
+              message: `Watch pattern does not match any files: "${watchPattern}"`,
+              context: `${context}.watch[${watchIndex}]`,
+            });
+          }
+        } else {
+          // For non-glob patterns, check if the file exists
           const absolutePath = path.resolve(baseDir, watchPattern);
           if (!fs.existsSync(absolutePath)) {
             warnings.push({
@@ -444,23 +461,35 @@ export function validateLinksConfig(links: FileLinkConfigArray, baseDir: string)
             });
           }
         }
-      });
+      }
     }
 
     // Validate target files exist and are files (not directories)
     if (link.target && Array.isArray(link.target)) {
-      link.target.forEach((targetPattern, targetIndex) => {
+      for (let targetIndex = 0; targetIndex < link.target.length; targetIndex++) {
+        const targetPattern = link.target[targetIndex];
         if (typeof targetPattern !== 'string') {
           errors.push({
             type: 'error',
             message: `Target pattern must be a string, got: ${typeof targetPattern}`,
             context: `${context}.target[${targetIndex}]`,
           });
-          return;
+          continue;
         }
 
-        // Only validate if it's not a glob pattern (contains *, **, ?)
-        if (!targetPattern.includes('*') && !targetPattern.includes('?')) {
+        // Check if it's a glob pattern
+        if (isGlobPattern(targetPattern)) {
+          // For glob patterns, check if at least one file matches
+          const matches = await findFilesMatchingPattern(targetPattern, baseDir);
+          if (matches.length === 0) {
+            warnings.push({
+              type: 'warning',
+              message: `Target pattern does not match any files: "${targetPattern}"`,
+              context: `${context}.target[${targetIndex}]`,
+            });
+          }
+        } else {
+          // For non-glob patterns, check if the file exists
           const absolutePath = path.resolve(baseDir, targetPattern);
           if (!fs.existsSync(absolutePath)) {
             warnings.push({
@@ -476,9 +505,9 @@ export function validateLinksConfig(links: FileLinkConfigArray, baseDir: string)
             });
           }
         }
-      });
+      }
     }
-  });
+  }
 
   return {
     valid: errors.length === 0,

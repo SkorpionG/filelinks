@@ -720,9 +720,37 @@ Both `watch` and `target` fields support glob patterns:
 
 **Validation behavior:**
 
-- **Glob patterns** (containing `*`, `**`, or `?`) skip file existence checks during validation
+- **Glob patterns** (containing `*`, `**`, or `?`) are checked to ensure at least one file matches
+  - If no files match the pattern, a **warning** is displayed during validation
+  - Example: `docs/**/*.md` with no markdown files → warning shown
 - **Literal paths** (no wildcards) are checked to ensure files exist
-- This allows you to use dynamic patterns without validation warnings
+- This helps catch typos and ensures your patterns are working correctly
+
+**Check command with glob patterns:**
+
+When running `filelinks check`, target glob patterns are expanded to show all matching files:
+
+```bash
+⚠ Documentation and Changelog
+  docs/README.md
+
+  Changed files (uncommitted):
+    • docs/README.md
+
+  Please review these target files:
+    docs/**/*.md:
+      • docs/README.md ✓
+      • docs/guide.md ✓
+      • docs/api/endpoints.md ✓
+```
+
+If a glob pattern matches no files, it shows:
+
+```bash
+  Please review these target files:
+    ✗ docs/**/*.md
+      (pattern matches 0 files)
+```
 
 ### Security Features
 

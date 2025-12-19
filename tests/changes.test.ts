@@ -1,4 +1,12 @@
-import { matchesPattern, findMatchingFiles } from '../src/utils/changes';
+import {
+  matchesPattern,
+  findMatchingFiles,
+  isGlobPattern,
+  findFilesMatchingPattern,
+} from '../src/utils/changes';
+import * as fs from 'fs';
+import * as path from 'path';
+import * as os from 'os';
 
 describe('Pattern Matching Utilities', () => {
   describe('matchesPattern', () => {
@@ -268,6 +276,159 @@ describe('Pattern Matching Utilities', () => {
       expect(matches).toHaveLength(2);
       expect(matches).toContain('src/index.ts');
       expect(matches).toContain('README.md');
+    });
+  });
+
+  describe('isGlobPattern', () => {
+    it('should identify patterns with single asterisk', () => {
+      expect(isGlobPattern('*.md')).toBe(true);
+      expect(isGlobPattern('src/*.ts')).toBe(true);
+      expect(isGlobPattern('file.*.js')).toBe(true);
+    });
+
+    it('should identify patterns with double asterisk', () => {
+      expect(isGlobPattern('**/*.md')).toBe(true);
+      expect(isGlobPattern('src/**/*.ts')).toBe(true);
+      expect(isGlobPattern('**/test.js')).toBe(true);
+    });
+
+    it('should identify patterns with question mark', () => {
+      expect(isGlobPattern('file?.ts')).toBe(true);
+      expect(isGlobPattern('test??.js')).toBe(true);
+    });
+
+    it('should identify patterns with mixed wildcards', () => {
+      expect(isGlobPattern('src/**/*.test.ts')).toBe(true);
+      expect(isGlobPattern('test/*.spec.?s')).toBe(true);
+    });
+
+    it('should return false for literal paths without wildcards', () => {
+      expect(isGlobPattern('src/index.ts')).toBe(false);
+      expect(isGlobPattern('README.md')).toBe(false);
+      expect(isGlobPattern('src/api/routes.ts')).toBe(false);
+    });
+
+    it('should return false for empty string', () => {
+      expect(isGlobPattern('')).toBe(false);
+    });
+
+    it('should handle paths with special characters but no wildcards', () => {
+      expect(isGlobPattern('file.name.ts')).toBe(false);
+      expect(isGlobPattern('src/(auth)/login.ts')).toBe(false);
+      expect(isGlobPattern('app/[id]/page.tsx')).toBe(false);
+    });
+  });
+
+  describe('findFilesMatchingPattern', () => {
+    let tempDir: string;
+
+    beforeEach(() => {
+      tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'filelinks-test-'));
+    });
+
+    afterEach(() => {
+      fs.rmSync(tempDir, { recursive: true, force: true });
+    });
+
+    it('should find files matching glob pattern', async () => {
+      // Create test files
+      fs.mkdirSync(path.join(tempDir, 'docs'), { recursive: true });
+      fs.writeFileSync(path.join(tempDir, 'docs', 'readme.md'), '');
+      fs.writeFileSync(path.join(tempDir, 'docs', 'guide.md'), '');
+      fs.writeFileSync(path.join(tempDir, 'docs', 'config.json'), '');
+
+      const matches = await findFilesMatchingPattern('docs/*.md', tempDir);
+
+      expect(matches).toHaveLength(2);
+      expect(matches).toContain('docs/readme.md');
+      expect(matches).toContain('docs/guide.md');
+      expect(matches).not.toContain('docs/config.json');
+    });
+
+    it('should find files matching recursive glob pattern', async () => {
+      // Create nested directory structure
+      fs.mkdirSync(path.join(tempDir, 'src', 'api'), { recursive: true });
+      fs.mkdirSync(path.join(tempDir, 'src', 'utils'), { recursive: true });
+      fs.writeFileSync(path.join(tempDir, 'src', 'index.ts'), '');
+      fs.writeFileSync(path.join(tempDir, 'src', 'api', 'routes.ts'), '');
+      fs.writeFileSync(path.join(tempDir, 'src', 'utils', 'helpers.ts'), '');
+
+      const matches = await findFilesMatchingPattern('src/**/*.ts', tempDir);
+
+      expect(matches.length).toBeGreaterThanOrEqual(2);
+      expect(matches).toContain('src/api/routes.ts');
+      expect(matches).toContain('src/utils/helpers.ts');
+    });
+
+    it('should return single file for non-glob pattern when file exists', async () => {
+      fs.writeFileSync(path.join(tempDir, 'README.md'), '');
+
+      const matches = await findFilesMatchingPattern('README.md', tempDir);
+
+      expect(matches).toHaveLength(1);
+      expect(matches).toContain('README.md');
+    });
+
+    it('should return empty array for non-glob pattern when file does not exist', async () => {
+      const matches = await findFilesMatchingPattern('NONEXISTENT.md', tempDir);
+
+      expect(matches).toHaveLength(0);
+    });
+
+    it('should return empty array when glob pattern matches no files', async () => {
+      fs.mkdirSync(path.join(tempDir, 'docs'), { recursive: true });
+      fs.writeFileSync(path.join(tempDir, 'docs', 'config.json'), '');
+
+      const matches = await findFilesMatchingPattern('docs/*.md', tempDir);
+
+      expect(matches).toHaveLength(0);
+    });
+
+    it('should not return directories', async () => {
+      fs.mkdirSync(path.join(tempDir, 'docs'), { recursive: true });
+      fs.writeFileSync(path.join(tempDir, 'README.md'), '');
+
+      const matches = await findFilesMatchingPattern('*', tempDir);
+
+      expect(matches).toContain('README.md');
+      expect(matches).not.toContain('docs');
+    });
+
+    it('should handle patterns with question mark wildcard', async () => {
+      fs.writeFileSync(path.join(tempDir, 'file1.ts'), '');
+      fs.writeFileSync(path.join(tempDir, 'file2.ts'), '');
+      fs.writeFileSync(path.join(tempDir, 'file12.ts'), '');
+
+      const matches = await findFilesMatchingPattern('file?.ts', tempDir);
+
+      expect(matches).toHaveLength(2);
+      expect(matches).toContain('file1.ts');
+      expect(matches).toContain('file2.ts');
+      expect(matches).not.toContain('file12.ts');
+    });
+
+    it('should include dotfiles when pattern matches them', async () => {
+      fs.writeFileSync(path.join(tempDir, '.gitignore'), '');
+      fs.writeFileSync(path.join(tempDir, '.env'), '');
+      fs.writeFileSync(path.join(tempDir, 'README.md'), '');
+
+      const matches = await findFilesMatchingPattern('.*', tempDir);
+
+      expect(matches.length).toBeGreaterThanOrEqual(2);
+      expect(matches).toContain('.gitignore');
+      expect(matches).toContain('.env');
+    });
+
+    it('should handle empty directory', async () => {
+      const matches = await findFilesMatchingPattern('**/*.md', tempDir);
+
+      expect(matches).toHaveLength(0);
+    });
+
+    it('should return empty array for invalid pattern', async () => {
+      const matches = await findFilesMatchingPattern('', tempDir);
+
+      expect(matches).toHaveLength(0);
     });
   });
 });
