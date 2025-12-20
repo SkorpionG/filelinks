@@ -7,6 +7,7 @@ import { newCommand } from './commands/new';
 import { validateCommand } from './commands/validate';
 import { checkCommand } from './commands/check';
 import { listCommand } from './commands/list';
+import { orphansCommand } from './commands/orphans';
 import { CLI_NAME } from './constants';
 
 const program = new Command();
@@ -56,6 +57,20 @@ program
   .action(async (options) => {
     try {
       await listCommand(options);
+    } catch (error) {
+      console.error(chalk.red('Error:'), error instanceof Error ? error.message : error);
+      process.exit(1);
+    }
+  });
+
+// Orphans command
+program
+  .command('orphans')
+  .description('Find orphaned link files not referenced by config or extends')
+  .option('-v, --verbose', 'Show verbose output with reference details')
+  .action(async (options) => {
+    try {
+      await orphansCommand(options);
     } catch (error) {
       console.error(chalk.red('Error:'), error instanceof Error ? error.message : error);
       process.exit(1);

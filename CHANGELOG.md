@@ -1,5 +1,22 @@
 # Changelog
 
+## [0.3.4] - 2025-12-19
+
+### Added
+
+- **`filelinks orphans` command**: Find orphaned link files not referenced anywhere
+  - Discovers link files that exist but aren't referenced by `filelinks.config.ts` or any `extends` field
+  - Helps identify unused or forgotten link files that can be cleaned up
+  - Shows which files are referenced by root config vs. extends
+  - Groups orphaned files by directory for easy navigation
+  - `-v, --verbose` flag shows detailed information about why each file is orphaned
+  - Provides actionable suggestions for resolving orphaned files:
+    - Add them to root config via `filelinks init`
+    - Reference them via `extends` in another link file
+    - Delete them if no longer needed
+  - Works from any directory within the repository
+  - Comprehensive test coverage with 16 unit tests
+
 ## [0.3.3] - 2025-12-19
 
 ### Added

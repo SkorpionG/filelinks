@@ -13,6 +13,7 @@
   - [`filelinks init`](#filelinks-init-options)
   - [`filelinks new`](#filelinks-new-options)
   - [`filelinks list`](#filelinks-list-options)
+  - [`filelinks orphans`](#filelinks-orphans-options)
   - [`filelinks check`](#filelinks-check-file-options)
   - [`filelinks validate`](#filelinks-validate-file-options)
 - [Configuration](#configuration)
@@ -298,6 +299,104 @@ Run "filelinks list --config --local --verbose" to see file sizes and link count
 - File sizes shown only with `--verbose` flag (formatted: B, KB, MB, GB, TB)
 - Detects missing files in `--config` mode
 - Works from any directory in the repository
+
+### `filelinks orphans [options]`
+
+Find orphaned link files that exist but aren't referenced by the root configuration or any `extends` field. This helps identify unused or forgotten link files that can be cleaned up.
+
+A link file is considered **orphaned** if:
+
+- It exists in the repository
+- It's NOT referenced in `filelinks.config.ts`
+- It's NOT referenced by any other link file's `extends` field
+
+**Options:**
+
+- `-v, --verbose` - Show verbose output with reference details
+
+**Examples:**
+
+```bash
+# Find orphaned link files
+filelinks orphans
+
+# Show detailed information about why files are orphaned
+filelinks orphans --verbose
+```
+
+**Output:**
+
+When orphaned files are found:
+
+```bash
+ Find orphaned filelinks link files
+
+Scanning for link files...
+
+Found 10 total link file(s)
+
+Finding referenced link files...
+
+2 referenced by filelinks.config.ts
+1 referenced by extends fields
+
+⚠ Found 3 orphaned link file(s):
+
+test/
+  • filelinks.links.json - test/filelinks.links.json
+
+lib/
+  • filelinks.links.json - lib/filelinks.links.json
+
+docs/archive/
+  • filelinks.links.json - docs/archive/filelinks.links.json
+
+Total: 3 orphaned file(s)
+
+These files exist but are not referenced by:
+  • filelinks.config.ts (root configuration)
+  • Any other link file's "extends" field
+
+Suggestions:
+  • Add them to root config: filelinks init (or edit filelinks.config.ts)
+  • Reference them via "extends" in another link file
+  • Delete them if they're no longer needed
+
+Run "filelinks orphans --verbose" for more details
+```
+
+**With verbose flag:**
+
+Shows additional context about why each file is orphaned:
+
+```bash
+test/
+  • filelinks.links.json - test/filelinks.links.json (not in config, no extends refs)
+```
+
+When no orphaned files exist:
+
+```bash
+✓ No orphaned link files found! All link files are referenced.
+
+All 10 link file(s) are either in the root config or referenced via extends.
+```
+
+**Features:**
+
+- Scans entire repository for link files (respects ignore patterns)
+- Checks both root config and extends references
+- Groups orphaned files by directory for easy navigation
+- Provides actionable suggestions for resolution
+- Works from any directory within the repository
+- Helpful for maintaining clean configuration
+
+**Use cases:**
+
+- **Repository cleanup**: Find and remove unused link files
+- **Migration verification**: Ensure all files are properly referenced after restructuring
+- **Audit**: Verify that all link files are intentionally configured
+- **Troubleshooting**: Identify why certain link files aren't being processed
 
 ### `filelinks check [file] [options]`
 
