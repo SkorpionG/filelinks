@@ -21,6 +21,53 @@ function removeComments(content: string): string {
 }
 
 /**
+ * Extract the linkFiles array content by finding matching brackets
+ * This handles nested brackets correctly (e.g., paths like app/[id]/file.json)
+ *
+ * @param content - The TypeScript config file content
+ * @returns The content between the linkFiles array brackets, or null if not found
+ */
+function extractLinkFilesContent(content: string): string | null {
+  const startMatch = content.match(/linkFiles:\s*\[/);
+  if (!startMatch) {
+    return null;
+  }
+
+  const startIndex = (startMatch.index ?? 0) + startMatch[0].length;
+  let depth = 1;
+  let i = startIndex;
+
+  // Find the matching closing bracket by tracking depth
+  while (i < content.length && depth > 0) {
+    const char = content[i];
+
+    // Skip string literals to avoid counting brackets inside strings
+    if (char === '"' || char === "'" || char === '`') {
+      const quote = char;
+      i++;
+      while (i < content.length && content[i] !== quote) {
+        if (content[i] === '\\') {
+          i++; // Skip escaped character
+        }
+        i++;
+      }
+    } else if (char === '[') {
+      depth++;
+    } else if (char === ']') {
+      depth--;
+    }
+
+    i++;
+  }
+
+  if (depth !== 0) {
+    return null; // Unmatched brackets
+  }
+
+  return content.substring(startIndex, i - 1);
+}
+
+/**
  * Parse a TypeScript config file to extract the linkFiles array
  *
  * This function uses a simple regex-based approach to parse the TypeScript
@@ -35,13 +82,11 @@ function parseLinkFilesFromContent(
   allowPartial: boolean = false
 ): LinkFileReference[] | PartialLinkFileReference[] | null {
   try {
-    // Find the linkFiles array in the content
-    const linkFilesMatch = configContent.match(/linkFiles:\s*\[([\s\S]*?)\]/);
-    if (!linkFilesMatch) {
+    // Extract the linkFiles array content (handles nested brackets)
+    const linkFilesContent = extractLinkFilesContent(configContent);
+    if (linkFilesContent === null) {
       return null;
     }
-
-    const linkFilesContent = linkFilesMatch[1];
 
     // If it's empty, return empty array
     if (!linkFilesContent.trim()) {
@@ -110,15 +155,17 @@ function parseLinkFilesFromContent(
 export function parseRootConfig(configPath: string): ParsedRootConfig {
   const content = fs.readFileSync(configPath, 'utf-8');
 
-  // Extract the linkFiles array using regex
-  // This is a simple parser that works for the generated format
-  const linkFilesMatch = content.match(/linkFiles:\s*\[([\s\S]*?)\]/);
+  // Extract the linkFiles array content (handles nested brackets correctly)
+  const linkFilesContent = extractLinkFilesContent(content);
 
-  if (!linkFilesMatch) {
+  if (linkFilesContent === null) {
     throw new Error('Could not parse linkFiles from root config');
   }
 
-  const linkFilesContent = linkFilesMatch[1];
+  // Handle empty array
+  if (!linkFilesContent.trim()) {
+    return { linkFiles: [] };
+  }
 
   // Remove comments from the content before parsing
   const contentWithoutComments = removeComments(linkFilesContent);

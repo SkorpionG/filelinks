@@ -1,0 +1,42 @@
+[
+  {
+    "id": "nextjs-dynamic-route-single",
+    "name": "Next.js Dynamic Route - Single Param",
+    "description": "Test glob pattern with [id] dynamic route",
+    "watch": ["cli_test/nextjs-brackets-test/app/posts/[id]/*.tsx"],
+    "target": ["cli_test/nextjs-brackets-test/components/shared/*.tsx"],
+    "watchType": "uncommitted"
+  },
+  {
+    "id": "nextjs-catchall-route",
+    "name": "Next.js Catch-all Route",
+    "description": "Test glob pattern with [...slug] catch-all route",
+    "watch": ["cli_test/nextjs-brackets-test/app/blog/[...slug]/*.tsx"],
+    "target": ["cli_test/nextjs-brackets-test/components/shared/Button.tsx"],
+    "watchType": "uncommitted"
+  },
+  {
+    "id": "nextjs-account-components",
+    "name": "Next.js Account Components",
+    "description": "Test glob pattern with [account] in path and _components directory",
+    "watch": ["cli_test/nextjs-brackets-test/app/[account]/_components/*.tsx"],
+    "target": ["cli_test/nextjs-brackets-test/components/shared/*.tsx"],
+    "watchType": "uncommitted"
+  },
+  {
+    "id": "nextjs-settings-userid",
+    "name": "Next.js Settings User ID",
+    "description": "Test nested path with [userId] dynamic segment",
+    "watch": ["cli_test/nextjs-brackets-test/app/settings/[userId]/*.tsx"],
+    "target": ["cli_test/nextjs-brackets-test/components/shared/Button.tsx"],
+    "watchType": "uncommitted"
+  },
+  {
+    "id": "nextjs-all-routes",
+    "name": "Next.js All Dynamic Routes",
+    "description": "Test recursive glob pattern matching all bracket routes",
+    "watch": ["cli_test/nextjs-brackets-test/app/**/*.tsx"],
+    "target": ["cli_test/nextjs-brackets-test/components/shared/*.tsx"],
+    "watchType": "uncommitted"
+  }
+]

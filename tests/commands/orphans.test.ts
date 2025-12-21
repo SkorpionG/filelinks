@@ -565,4 +565,136 @@ describe('Orphans Command', () => {
       );
     });
   });
+
+  describe('Brackets in paths (Next.js dynamic routes)', () => {
+    it('should NOT mark files with [brackets] as orphans when they are in root config', async () => {
+      // Create directory structure with brackets (Next.js dynamic route)
+      const accountDir = path.join(
+        testDir,
+        'apps',
+        'web',
+        'app',
+        'home',
+        '[account]',
+        '_components'
+      );
+      fs.mkdirSync(accountDir, { recursive: true });
+
+      const userDir = path.join(testDir, 'apps', 'web', 'app', 'home', '(user)', '_components');
+      fs.mkdirSync(userDir, { recursive: true });
+
+      // Create link files
+      fs.writeFileSync(
+        path.join(accountDir, 'filelinks.links.json'),
+        JSON.stringify(
+          [
+            {
+              watch: ['apps/web/app/home/[account]/_components/*.tsx'],
+              target: ['apps/web/components/shared/*.tsx'],
+            },
+          ],
+          null,
+          2
+        ),
+        'utf-8'
+      );
+
+      fs.writeFileSync(
+        path.join(userDir, 'filelinks.links.json'),
+        JSON.stringify(
+          [
+            {
+              watch: ['apps/web/app/home/(user)/_components/*.tsx'],
+              target: ['apps/web/components/shared/*.tsx'],
+            },
+          ],
+          null,
+          2
+        ),
+        'utf-8'
+      );
+
+      // Create root config that references these files
+      const rootConfig = `import type { RootConfig } from 'filelinks';
+
+export const config: RootConfig = {
+  linkFiles: [
+    {
+      id: 'home-account-components',
+      name: 'Home Account Components',
+      path: 'apps/web/app/home/[account]/_components/filelinks.links.json',
+    },
+    {
+      id: 'home-user-components',
+      name: 'Home User Components',
+      path: 'apps/web/app/home/(user)/_components/filelinks.links.json',
+    },
+  ],
+};
+`;
+      fs.writeFileSync(path.join(testDir, 'filelinks.config.ts'), rootConfig, 'utf-8');
+
+      await orphansCommand({});
+
+      // Should show success - no orphans found
+      expect(displaySuccess).toHaveBeenCalledWith(
+        expect.stringContaining('No orphaned link files found')
+      );
+    });
+
+    it('should correctly identify actual orphans vs files with brackets in config', async () => {
+      // Create 3 files: 2 in config (with brackets), 1 orphaned (also with brackets)
+      const accountDir = path.join(testDir, 'apps', 'web', 'app', '[account]');
+      const userDir = path.join(testDir, 'apps', 'web', 'app', '[user]');
+      const settingsDir = path.join(testDir, 'apps', 'web', 'app', '[settings]');
+
+      fs.mkdirSync(accountDir, { recursive: true });
+      fs.mkdirSync(userDir, { recursive: true });
+      fs.mkdirSync(settingsDir, { recursive: true });
+
+      fs.writeFileSync(path.join(accountDir, 'filelinks.links.json'), '[]', 'utf-8');
+      fs.writeFileSync(path.join(userDir, 'filelinks.links.json'), '[]', 'utf-8');
+      fs.writeFileSync(path.join(settingsDir, 'filelinks.links.json'), '[]', 'utf-8'); // Orphaned
+
+      // Root config references only [account] and [user]
+      const rootConfig = `import type { RootConfig } from 'filelinks';
+
+export const config: RootConfig = {
+  linkFiles: [
+    {
+      id: 'account',
+      name: 'Account',
+      path: 'apps/web/app/[account]/filelinks.links.json',
+    },
+    {
+      id: 'user',
+      name: 'User',
+      path: 'apps/web/app/[user]/filelinks.links.json',
+    },
+  ],
+};
+`;
+      fs.writeFileSync(path.join(testDir, 'filelinks.config.ts'), rootConfig, 'utf-8');
+
+      // Capture console.log output
+      const consoleOutput: string[] = [];
+      const originalLog = console.log;
+      console.log = jest.fn((...args: unknown[]) => {
+        consoleOutput.push(args.map(String).join(' '));
+      });
+
+      await orphansCommand({});
+
+      console.log = originalLog;
+
+      // Should find exactly 1 orphan ([settings])
+      expect(displayWarning).toHaveBeenCalledWith(expect.stringContaining('Found'));
+
+      // Check that [settings] is in the orphaned list but [account] and [user] are not
+      const allOutput = consoleOutput.join('\n');
+      expect(allOutput).toContain('[settings]');
+      expect(allOutput).not.toContain('[account]');
+      expect(allOutput).not.toContain('[user]');
+    });
+  });
 });

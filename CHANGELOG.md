@@ -1,5 +1,36 @@
 # Changelog
 
+## [0.3.5] - 2025-12-20
+
+### Fixed
+
+- **Square bracket escaping in glob patterns**: Fixed critical bug where glob patterns with square brackets were incorrectly processed
+  - Patterns containing `[brackets]` (common in Next.js dynamic routes like `[id]`, `[account]`, `[...slug]`) were showing false "does not match any files" warnings
+  - Affects validation in v0.3.3 and orphans command in v0.3.4
+  - Root cause: The `glob` library interprets `[brackets]` as character class patterns (like regex `[abc]`), not literal directory names
+  - Fix: Square brackets are now properly escaped before passing to glob, treating them as literal characters
+  - Example patterns that now work correctly:
+    - `apps/web/app/[account]/_components/*.tsx` - Next.js dynamic routes
+    - `app/posts/[id]/page.tsx` - Dynamic route segments
+    - `docs/[...slug]/index.md` - Catch-all routes
+  - Also works with Next.js route groups: `(auth)`, `(dashboard)`, etc.
+
+- **Root config parsing with square brackets**: Fixed bug in root config parsing mechanism that truncated paths containing brackets
+  - Paths like `apps/web/app/[account]/filelinks.links.json` in root config were truncated to `apps/web/app/[account`
+  - Caused the orphans command to incorrectly mark files in `[bracket]` directories as orphans
+  - Root cause: Regex `/linkFiles:\s*\[([\s\S]*?)\]/` matched the first `]` it found (inside the path), not the array closing bracket
+  - Fix: Implemented proper bracket-aware parsing that tracks bracket depth and skips string literals
+  - Added comprehensive test coverage for bracket handling in both validation and orphans commands
+
+### Changed
+
+- **Improved validation warning messages**: Added helpful hints when single-star glob patterns don't match files
+  - When a pattern using `*` (but not `**`) matches no files, the warning now includes a hint
+  - Example: `Watch pattern does not match any files: "docs/*.md" (Hint: * matches only within a single directory. To match files in subdirectories, use ** instead)`
+  - Helps users understand the difference between `*` and `**` glob patterns
+  - Only shows hint for single-star patterns to avoid noise
+  - Makes debugging pattern issues significantly faster
+
 ## [0.3.4] - 2025-12-19
 
 ### Added

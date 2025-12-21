@@ -438,9 +438,15 @@ export async function validateLinksConfig(
           // For glob patterns, check if at least one file matches
           const matches = await findFilesMatchingPattern(watchPattern, baseDir);
           if (matches.length === 0) {
+            // Check if pattern uses * but not ** - suggest using ** if no files found
+            const usesStarButNotDoubleStar =
+              watchPattern.includes('*') && !watchPattern.includes('**');
+            const hint = usesStarButNotDoubleStar
+              ? ' (Hint: * matches only within a single directory. To match files in subdirectories, use ** instead)'
+              : '';
             warnings.push({
               type: 'warning',
-              message: `Watch pattern does not match any files: "${watchPattern}"`,
+              message: `Watch pattern does not match any files: "${watchPattern}"${hint}`,
               context: `${context}.watch[${watchIndex}]`,
             });
           }
@@ -482,9 +488,15 @@ export async function validateLinksConfig(
           // For glob patterns, check if at least one file matches
           const matches = await findFilesMatchingPattern(targetPattern, baseDir);
           if (matches.length === 0) {
+            // Check if pattern uses * but not ** - suggest using ** if no files found
+            const usesStarButNotDoubleStar =
+              targetPattern.includes('*') && !targetPattern.includes('**');
+            const hint = usesStarButNotDoubleStar
+              ? ' (Hint: * matches only within a single directory. To match files in subdirectories, use ** instead)'
+              : '';
             warnings.push({
               type: 'warning',
-              message: `Target pattern does not match any files: "${targetPattern}"`,
+              message: `Target pattern does not match any files: "${targetPattern}"${hint}`,
               context: `${context}.target[${targetIndex}]`,
             });
           }

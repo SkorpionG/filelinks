@@ -810,10 +810,30 @@ Both `watch` and `target` fields support glob patterns:
 
 **Supported patterns:**
 
-- `**/*.ts` - All TypeScript files recursively
-- `src/**/*.{ts,tsx}` - TypeScript and TSX files in src
-- `*.md` - All markdown files in the same directory
-- `docs/*.md` - All markdown files in docs directory
+- `**/*.ts` - All TypeScript files recursively (in current directory and all subdirectories)
+- `src/**/*.{ts,tsx}` - TypeScript and TSX files in src and all subdirectories
+- `*.md` - All markdown files in the root directory only
+- `docs/*.md` - All markdown files in docs directory only (not in subdirectories)
+- `docs/**/*.md` - All markdown files in docs directory and all subdirectories
+
+**Important: `*` vs `**` difference:\*\*
+
+- `*` matches files within a **single directory level** only
+- `**` matches files **recursively** across all subdirectory levels
+
+Example:
+
+- `docs/*.md` matches `docs/README.md` but NOT `docs/guides/setup.md`
+- `docs/**/*.md` matches both `docs/README.md` AND `docs/guides/setup.md`
+
+**Next.js route support:**
+
+Square brackets in paths (Next.js dynamic routes and route groups) are fully supported:
+
+- `app/[id]/page.tsx` - Dynamic route segment
+- `app/posts/[slug]/*.tsx` - Dynamic route with wildcards
+- `app/[...params]/page.tsx` - Catch-all route
+- `app/(auth)/login/*.tsx` - Route groups (parentheses)
 
 **Path resolution:** All paths should be relative to the git repository root.
 

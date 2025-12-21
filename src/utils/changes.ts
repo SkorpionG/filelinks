@@ -150,6 +150,24 @@ export function isGlobPattern(pattern: string): boolean {
 }
 
 /**
+ * Escape glob special characters while preserving glob wildcards
+ * This allows patterns like "app/[id]/*.tsx" to work correctly,
+ * treating [id] as a literal directory name, not a character class
+ *
+ * @param pattern - Pattern that may contain both glob wildcards and literal special chars
+ * @returns Pattern with special chars escaped, wildcards preserved
+ */
+function escapeGlobSpecialChars(pattern: string): string {
+  // Escape square brackets and other glob special characters
+  // but preserve * and ? wildcards
+  return pattern
+    .replace(/\[/g, '\\[') // Escape opening bracket
+    .replace(/\]/g, '\\]'); // Escape closing bracket
+  // Note: Parentheses (), braces {}, and other chars don't need escaping
+  // in basic glob patterns (they're only special in extended glob syntax)
+}
+
+/**
  * Find files matching a pattern (supports both regular paths and glob patterns)
  *
  * @param pattern - File pattern to match (can be a regular path or glob pattern)
@@ -170,8 +188,12 @@ export async function findFilesMatchingPattern(
   }
 
   // It's a glob pattern, use glob to find matching files
+  // Escape special characters like [brackets] so they're treated literally
+  // (important for Next.js dynamic routes like [id], [slug], etc.)
+  const escapedPattern = escapeGlobSpecialChars(pattern);
+
   try {
-    const matches = await glob(pattern, {
+    const matches = await glob(escapedPattern, {
       cwd: baseDir,
       nodir: true, // Only return files, not directories
       dot: true, // Include dotfiles
