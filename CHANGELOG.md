@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.3.6] - 2025-02-04
+
+### Fixed
+
+- **Extends path resolution**: Fixed inconsistent path resolution for `extends` fields across commands
+  - The `extends` property now supports both relative paths (`./marketing/filelinks.links.json`) and root-relative paths (`apps/web/components/marketing/filelinks.links.json`)
+  - Previously, some commands only resolved paths relative to the link file's directory, causing root-relative paths to fail
+  - Now all commands (`check`, `validate`, `orphans`) consistently try both resolution methods
+  - Nested extends chains are now properly followed regardless of path style
+
 ## [0.3.5] - 2025-12-20
 
 ### Fixed

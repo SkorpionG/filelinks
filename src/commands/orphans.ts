@@ -65,9 +65,10 @@ function findReferencedByRootConfig(gitRoot: string): Set<string> {
  * Find all link files referenced via extends fields
  *
  * @param linkFiles - Array of all link file paths to scan
+ * @param gitRoot - The git repository root directory
  * @returns Set of absolute paths to referenced link files
  */
-function findReferencedByExtends(linkFiles: string[]): Set<string> {
+function findReferencedByExtends(linkFiles: string[], gitRoot: string): Set<string> {
   const referenced = new Set<string>();
 
   for (const linkFilePath of linkFiles) {
@@ -82,10 +83,18 @@ function findReferencedByExtends(linkFiles: string[]): Set<string> {
       // Check each link in the file for extends field
       for (const link of config) {
         if (link.extends) {
-          // Resolve the extends path relative to the current link file's directory
+          // Try resolving the extends path relative to the current link file's directory first
           const baseDir = path.dirname(linkFilePath);
-          const absolutePath = path.resolve(baseDir, link.extends);
-          const normalizedPath = path.normalize(absolutePath);
+          let absolutePath = path.resolve(baseDir, link.extends);
+          let normalizedPath = path.normalize(absolutePath);
+
+          // If the file doesn't exist, try resolving relative to the git root
+          // This supports both relative paths (./marketing/file.json) and
+          // root-relative paths (apps/web/components/marketing/file.json)
+          if (!fs.existsSync(normalizedPath)) {
+            absolutePath = path.resolve(gitRoot, link.extends);
+            normalizedPath = path.normalize(absolutePath);
+          }
 
           // Only add if the file exists (to avoid adding broken references)
           if (fs.existsSync(normalizedPath)) {
@@ -156,7 +165,7 @@ export async function orphansCommand(options: OrphansOptions = {}): Promise<void
   displayHeader('Finding referenced link files...\n');
 
   const referencedByConfig = findReferencedByRootConfig(gitRoot);
-  const referencedByExtends = findReferencedByExtends(allLinkFiles);
+  const referencedByExtends = findReferencedByExtends(allLinkFiles, gitRoot);
 
   // Combine all referenced files
   const allReferenced = new Set([...referencedByConfig, ...referencedByExtends]);

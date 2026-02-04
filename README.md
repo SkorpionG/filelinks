@@ -716,6 +716,17 @@ The `extends` property allows you to reuse link configurations from other link f
 ]
 ```
 
+**Path resolution:**
+
+The `extends` path supports two formats:
+
+- **Relative paths** (starting with `./` or `../`): Resolved relative to the link file's directory
+  - Example: `"extends": "./marketing/filelinks.links.json"`
+- **Root-relative paths**: Resolved relative to the git repository root
+  - Example: `"extends": "apps/web/components/shared/filelinks.links.json"`
+
+Both formats work consistently across all commands (`check`, `validate`, `orphans`).
+
 **How extends works:**
 
 - When you use `extends`, ALL links from the referenced file are included

@@ -501,6 +501,17 @@ Then in other directories, extend from this shared configuration:
 ]
 ```
 
+**Path resolution:**
+
+The `extends` path supports two formats:
+
+- **Relative paths** (starting with `./` or `../`): Resolved relative to the link file's directory
+  - Example: `"extends": "./shared/filelinks.links.json"`
+- **Root-relative paths**: Resolved relative to the git repository root
+  - Example: `"extends": "shared/docs.links.json"`
+
+Both formats work consistently across all commands (`check`, `validate`, `orphans`).
+
 **How it works:**
 
 - The `extends` property includes **ALL links** from the referenced file

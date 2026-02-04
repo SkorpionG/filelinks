@@ -269,6 +269,111 @@ describe('Orphans Command', () => {
       );
     });
 
+    it('should handle nested extends chains (A extends B, B extends C)', async () => {
+      // Create a root config with only the top-level file
+      const rootConfig = `
+        export default {
+          linkFiles: [
+            {
+              id: 'main',
+              name: 'Main Links',
+              path: './filelinks.links.json',
+            },
+          ],
+        };
+      `;
+      fs.writeFileSync(path.join(testDir, 'filelinks.config.ts'), rootConfig, 'utf-8');
+
+      // Create main link file (A) that extends level1
+      const mainLinks = [
+        {
+          extends: './level1/filelinks.links.json',
+        },
+      ];
+      fs.writeFileSync(
+        path.join(testDir, 'filelinks.links.json'),
+        JSON.stringify(mainLinks),
+        'utf-8'
+      );
+
+      // Create level1 file (B) that extends level2
+      fs.mkdirSync(path.join(testDir, 'level1'), { recursive: true });
+      const level1Links = [
+        {
+          extends: '../level2/filelinks.links.json',
+        },
+      ];
+      fs.writeFileSync(
+        path.join(testDir, 'level1', 'filelinks.links.json'),
+        JSON.stringify(level1Links),
+        'utf-8'
+      );
+
+      // Create level2 file (C) - end of chain
+      fs.mkdirSync(path.join(testDir, 'level2'), { recursive: true });
+      fs.writeFileSync(
+        path.join(testDir, 'level2', 'filelinks.links.json'),
+        JSON.stringify([]),
+        'utf-8'
+      );
+
+      await orphansCommand({});
+
+      // All 3 files should be referenced (main in config, level1 and level2 via extends chain)
+      expect(displaySuccess).toHaveBeenCalledWith(
+        expect.stringContaining('No orphaned link files found')
+      );
+    });
+
+    it('should handle root-relative extends paths (paths from git root)', async () => {
+      // Create directory structure
+      fs.mkdirSync(path.join(testDir, 'apps', 'web', 'components', 'kit'), { recursive: true });
+      fs.mkdirSync(path.join(testDir, 'apps', 'web', 'components', 'kit', 'marketing'), {
+        recursive: true,
+      });
+
+      // Create a root config with the kit file
+      const rootConfig = `
+        export default {
+          linkFiles: [
+            {
+              id: 'kit',
+              name: 'Kit Links',
+              path: './apps/web/components/kit/filelinks.links.json',
+            },
+          ],
+        };
+      `;
+      fs.writeFileSync(path.join(testDir, 'filelinks.config.ts'), rootConfig, 'utf-8');
+
+      // Create kit link file that extends marketing using ROOT-RELATIVE path
+      const kitLinks = [
+        {
+          id: 'kit-marketing',
+          extends: 'apps/web/components/kit/marketing/filelinks.links.json',
+        },
+      ];
+      fs.writeFileSync(
+        path.join(testDir, 'apps', 'web', 'components', 'kit', 'filelinks.links.json'),
+        JSON.stringify(kitLinks),
+        'utf-8'
+      );
+
+      // Create the marketing file (extended via root-relative path)
+      fs.writeFileSync(
+        path.join(testDir, 'apps', 'web', 'components', 'kit', 'marketing', 'filelinks.links.json'),
+        JSON.stringify([]),
+        'utf-8'
+      );
+
+      await orphansCommand({});
+
+      // Both files should be referenced (kit in config, marketing via extends)
+      expect(displaySuccess).toHaveBeenCalledWith(
+        expect.stringContaining('No orphaned link files found')
+      );
+    });
+
     it('should not include broken extends references in referenced set', async () => {
       // Create a root config with one file
       const rootConfig = `

@@ -237,11 +237,13 @@ export function validateRootConfig(
  *
  * @param links - The links configuration to validate
  * @param baseDir - The base directory for resolving relative paths
+ * @param gitRoot - Optional git root for resolving root-relative paths
  * @returns Validation result with errors and warnings
  */
 export async function validateLinksConfig(
   links: FileLinkConfigArray,
-  baseDir: string
+  baseDir: string,
+  gitRoot?: string
 ): Promise<ValidationResult> {
   const errors: ValidationIssue[] = [];
   const warnings: ValidationIssue[] = [];
@@ -284,7 +286,14 @@ export async function validateLinksConfig(
         });
       } else {
         // Check if extends path is valid
-        const extendsPath = path.resolve(baseDir, link.extends);
+        // Try baseDir first, then gitRoot for root-relative paths
+        let extendsPath = path.resolve(baseDir, link.extends);
+        if (!fs.existsSync(extendsPath) && gitRoot && gitRoot !== baseDir) {
+          const gitRootPath = path.resolve(gitRoot, link.extends);
+          if (fs.existsSync(gitRootPath)) {
+            extendsPath = gitRootPath;
+          }
+        }
         if (!fs.existsSync(extendsPath)) {
           errors.push({
             type: 'error',

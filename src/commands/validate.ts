@@ -133,7 +133,7 @@ async function validateSpecificFile(filePath: string): Promise<void> {
     const links = configManager.loadConfig(absolutePath);
 
     // First validate the original links (to catch warnings about ignored properties with extends)
-    const originalValidation = await validateLinksConfig(links, baseDir);
+    const originalValidation = await validateLinksConfig(links, baseDir, gitRoot || undefined);
 
     // Show extends information and resolve
     const hasExtends = links.some((link) => link.extends);
@@ -164,7 +164,14 @@ async function validateSpecificFile(filePath: string): Promise<void> {
       }
 
       // Check for duplicate extends paths within this file
-      const extendsAbsolutePath = path.resolve(baseDir, link.extends);
+      // Try baseDir first, then gitRoot for root-relative paths
+      let extendsAbsolutePath = path.resolve(baseDir, link.extends);
+      if (!fs.existsSync(extendsAbsolutePath) && gitRoot && gitRoot !== baseDir) {
+        const gitRootPath = path.resolve(gitRoot, link.extends);
+        if (fs.existsSync(gitRootPath)) {
+          extendsAbsolutePath = gitRootPath;
+        }
+      }
       const normalizedExtendsPath = path.normalize(extendsAbsolutePath);
 
       if (seenExtendsPaths.has(normalizedExtendsPath)) {
@@ -179,7 +186,14 @@ async function validateSpecificFile(filePath: string): Promise<void> {
       seenExtendsPaths.set(normalizedExtendsPath, index);
 
       // Use file-level extends resolution to get ALL links from the extended file
-      const resolution = resolveFileExtends(link.extends, baseDir, initialVisitedPaths);
+      // Pass gitRoot to support both relative paths (./marketing/file.json) and
+      // root-relative paths (apps/web/components/marketing/file.json)
+      const resolution = resolveFileExtends(
+        link.extends,
+        baseDir,
+        initialVisitedPaths,
+        gitRoot || undefined
+      );
 
       // Collect errors
       if (resolution.errors.length > 0) {
@@ -224,7 +238,7 @@ async function validateSpecificFile(filePath: string): Promise<void> {
     }
 
     // Validate the resolved links
-    const validation = await validateLinksConfig(resolvedLinks, baseDir);
+    const validation = await validateLinksConfig(resolvedLinks, baseDir, gitRoot || undefined);
 
     // Merge warnings from original validation (for extends-related warnings)
     originalValidation.warnings.forEach((warning) => {
@@ -379,7 +393,7 @@ async function validateLocalConfig(): Promise<void> {
       displayError(ERROR_MESSAGES.GIT_ROOT_NOT_FOUND);
       process.exit(1);
     }
-    const validation = await validateLinksConfig(links, gitRoot);
+    const validation = await validateLinksConfig(links, gitRoot, gitRoot);
 
     if (validation.errors.length > 0) {
       displayError('Link file has errors:\n');
