@@ -372,7 +372,7 @@ async function listFromRootConfig(verbose?: boolean, local?: boolean): Promise<v
     const filePath = linkFile.path || '(no path)';
 
     // Check if the file actually exists
-    let exists = true;
+    let exists: boolean;
     if (linkFile.path) {
       const absolutePath = path.isAbsolute(linkFile.path)
         ? linkFile.path

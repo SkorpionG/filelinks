@@ -1,0 +1,4 @@
+{
+  "specstory.cloudSync.enabled": "never",
+  "snyk.advanced.autoSelectOrganization": false
+}

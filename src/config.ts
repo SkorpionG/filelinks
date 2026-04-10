@@ -59,7 +59,7 @@ export class ConfigManager {
       return config as FileLinkConfigArray;
     } catch (error) {
       if (error instanceof SyntaxError) {
-        throw new Error(`Invalid JSON in configuration file: ${error.message}`);
+        throw new Error(`Invalid JSON in configuration file: ${error.message}`, { cause: error });
       }
       throw error;
     }
@@ -77,7 +77,8 @@ export class ConfigManager {
       this.configPath = targetPath;
     } catch (error) {
       throw new Error(
-        `Failed to save configuration: ${error instanceof Error ? error.message : 'Unknown error'}`
+        `Failed to save configuration: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        { cause: error }
       );
     }
   }

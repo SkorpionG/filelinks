@@ -51,7 +51,8 @@ export async function getChangedFiles(
     }
   } catch (error) {
     throw new Error(
-      `Failed to get git status: ${error instanceof Error ? error.message : 'Unknown error'}`
+      `Failed to get git status: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      { cause: error }
     );
   }
 }
